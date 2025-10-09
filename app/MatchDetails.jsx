@@ -45,7 +45,7 @@ export default function MatchDetails() {
             const endTime = Math.floor(new Date(parsedMatch.end_time).getTime() / 1000);
             const startTime = Math.floor(new Date(parsedMatch.start_time).getTime() / 1000);
             const id_setting = Math.floor(100000 + Math.random() * 900000).toString();
-            const id_game = Math.floor(100000 + Math.random() * 900000).toString();
+            const id_game = parsedMatch.match_id.toString();
             console.log("Match ID:", id_game);
             const team_away = parsedMatch.away_team_id;
             const team_local = parsedMatch.local_team_id;
@@ -55,14 +55,14 @@ export default function MatchDetails() {
             //await setGame(description, endTime, id_game, "44", startTime, team_away, team_local);
             //setLoadingMessage("Creating private bet settings...");
 
-            await set_private_bet(minBet, "557828", description, keypairUser.publicKey(), id_setting, keypairUser);
+            await set_private_bet(minBet, id_game, description, keypairUser.publicKey(), id_setting, keypairUser);
             try {
                 const response = await fetch('http://192.168.1.8:8383/api/insertrooms', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: id_setting, start_time: parsedMatch.start_time, finish_time: parsedMatch.end_time, title: description, active: false }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: id_setting, start_time: parsedMatch.start_time, finish_time: parsedMatch.end_time, title: description, active: false, id_game: id_game, minBet: minBet }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -78,7 +78,7 @@ export default function MatchDetails() {
             }
             setLoadingMessage("Room created successfully 🎉");
 
-            setRoomCode(id_game);
+            setRoomCode(id_setting);
         } catch (error) {
             alert("Error creating room");
             console.error("Error creating room:", error);

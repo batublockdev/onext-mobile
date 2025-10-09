@@ -1,7 +1,8 @@
 import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { teamLogos } from "../../components/teamLogos";
 
 export default function Rooms() {
     const [rooms, setRooms] = useState([]);
@@ -60,32 +61,51 @@ export default function Rooms() {
                     pathname: "/specificRoom",
                     params: {
                         room_id: item.room_id,
-                        title: item.title,
+                        title: `${item.local_team_name} vs ${item.away_team_name}`,
+                        local_team_name: item.local_team_name,
+                        away_team_name: item.away_team_name,
                         start_time: item.start_time,
                         finish_time: item.finish_time,
                         active: item.active,
-                        bet: item.bet,
-                        users: JSON.stringify([
-                            { id: "user1", firstName: "Carlos" },
-                            { id: "user2", firstName: "Laura" },
-                            { id: "user3", firstName: "Andrés" },
-                        ]),
+                        bet: item.user_bet,
+                        users: JSON.stringify(item.room_users),
+                        local_team_logo: item.local_team_logo,
+                        away_team_logo: item.away_team_logo,
                     },
                 })
+
             }
 
         >
-            <Text style={styles.roomName}>{item.title}</Text>
+            <View style={styles.teamsContainer}>
+                <View style={styles.team}>
+                    <Image
+                        source={teamLogos[item.local_team_logo]}
+                        style={styles.logo}
+                    />
+                    <Text style={styles.teamName}>{item.local_team_name}</Text>
+                </View>
+
+                <Text style={styles.vs}>VS</Text>
+
+                <View style={styles.team}>
+                    <Image
+                        source={teamLogos[item.away_team_logo]} style={styles.logo}
+                    />
+                    <Text style={styles.teamName}>{item.away_team_name}</Text>
+                </View>
+            </View>
+
             <Text style={styles.roomTime}>
                 {new Date(item.start_time).toLocaleString()} -{" "}
                 {new Date(item.finish_time).toLocaleString()}
             </Text>
+
             <Text style={styles.roomStatus}>
-                Status: {item.active ? "Active" : "Inactive"} | Bet:{" "}
-                {item.bet ? "Yes" : "No"}
+                Status: {item.active ? "Active" : "Inactive"} | Your bet:{" "}
+                {item.user_bet && item.user_bet !== "false" ? item.user_bet : "No bet"}
             </Text>
         </TouchableOpacity>
-
     );
 
     return (
@@ -111,45 +131,51 @@ export default function Rooms() {
                     <Text style={styles.joinButtonText}>Join</Text>
                 </TouchableOpacity>
             </View>
-        </View>);
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: "#FAFAFA" },
-    title: { fontSize: 24, fontWeight: "bold", marginBottom: 15, color: "#333" },
-    list: { paddingBottom: 20 },
-
+    container: { flex: 1, backgroundColor: "#fff", padding: 16 },
+    title: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
+    list: { paddingBottom: 80 },
     roomCard: {
-        padding: 20,
-        borderRadius: 15,
+        padding: 14,
+        borderRadius: 12,
         marginBottom: 12,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: "#ddd",
     },
-    roomName: { fontSize: 18, fontWeight: "700", marginBottom: 5, color: "#007AFF" },
-    roomTime: { fontSize: 14, color: "#555", marginBottom: 3 },
-    roomStatus: { fontSize: 13, color: "#888" },
-
-    joinContainer: { flexDirection: "row", marginTop: 25 },
+    teamsContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    team: { alignItems: "center", width: "40%" },
+    logo: { width: 50, height: 50, resizeMode: "contain" },
+    teamName: { fontSize: 14, fontWeight: "600", marginTop: 6 },
+    vs: { fontSize: 16, fontWeight: "bold" },
+    roomTime: { color: "#555", marginTop: 10, fontSize: 13 },
+    roomStatus: { color: "#222", marginTop: 4, fontSize: 13 },
+    joinContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 10,
+    },
     input: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#CCC",
-        borderRadius: 12,
-        padding: 12,
-        marginRight: 10,
-        backgroundColor: "#FFF",
+        borderColor: "#ccc",
+        borderRadius: 8,
+        padding: 10,
+        marginRight: 8,
+        color: "#000",
     },
     joinButton: {
-        backgroundColor: "#007AFF",
-        paddingHorizontal: 25,
-        borderRadius: 12,
-        justifyContent: "center",
-        alignItems: "center",
+        backgroundColor: "#2196F3",
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
     },
-    joinButtonText: { color: "#FFF", fontWeight: "700", fontSize: 16 },
+    joinButtonText: { color: "#fff", fontWeight: "bold" },
 });
-

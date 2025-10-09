@@ -28,7 +28,7 @@ const TabsLayout = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "x" }), // send your user ID here
+                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "x", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, }), // send your user ID here
             });
 
             if (!response.ok) {

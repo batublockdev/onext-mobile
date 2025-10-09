@@ -96,14 +96,14 @@ async function set_private_bet(min_amount, game_id, description, admin, id, keyp
     ], keypairUser);
 
 }
-async function place_bet(address, game_id, team, amount) {
+async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
     // 1. mint some usdc to be  staked
     //await mint_usdc(address, amount);
 
     const bet = xdr.ScVal.scvMap([
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("Setting"),
-            val: nativeToScVal(game_id, { type: "i128" }),
+            val: nativeToScVal(setting, { type: "i128" }),
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("amount_bet"),
@@ -115,7 +115,7 @@ async function place_bet(address, game_id, team, amount) {
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("betType"),
-            val: xdr.ScVal.scvVec([nativeToScVal("Public", { type: "symbol" })]),
+            val: xdr.ScVal.scvVec([nativeToScVal("Private", { type: "symbol" })]),
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("gameid"),
@@ -123,7 +123,7 @@ async function place_bet(address, game_id, team, amount) {
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("id"),
-            val: nativeToScVal(1212n, { type: "i128" }),
+            val: nativeToScVal(id_bet, { type: "i128" }),
         }),
 
     ]);
@@ -132,7 +132,7 @@ async function place_bet(address, game_id, team, amount) {
     await funtionExecution("bet", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         bet,
-    ], sourceKeypairPlayer1);
+    ], keypairUser);
 }
 async function asses_result(address, setting, game_id, desition) {
     // 1. mint some usdc to be  staked
