@@ -1,0 +1,23 @@
+// components/teamLogos.js
+export const teamLogos = {
+    "Alianza.png": require("../assets/LigaColombia/Alianza.png"),
+    "Envigado.png": require("../assets/LigaColombia/Envigado.png"),
+    "DeportesTolima.png": require("../assets/LigaColombia/DeportesTolima.png"),
+    "equidad.png": require("../assets/LigaColombia/equidad.png"),
+    "America.png": require("../assets/LigaColombia/America.png"),
+    "Llaneros.png": require("../assets/LigaColombia/Llaneros.png"),
+    "Santafe.png": require("../assets/LigaColombia/Santafe.png"),
+    "Junior.png": require("../assets/LigaColombia/Junior.png"),
+    "Union.png": require("../assets/LigaColombia/Union.png"),
+    "Bucaramanga.png": require("../assets/LigaColombia/Bucaramanga.png"),
+    "Pasto.png": require("../assets/LigaColombia/Pasto.png"),
+    "AguilasDoradas.png": require("../assets/LigaColombia/AguilasDoradas.png"),
+    "Medellin.png": require("../assets/LigaColombia/Medellin.png"),
+    "OnceCaldas.png": require("../assets/LigaColombia/OnceCaldas.png"),
+    "Boyaca.png": require("../assets/LigaColombia/Boyaca.png"),
+    "Fortaleza.png": require("../assets/LigaColombia/Fortaleza.png"),
+    "cali.png": require("../assets/LigaColombia/cali.png"),
+    "Nacional.png": require("../assets/LigaColombia/Nacional.png"),
+    "Pereira.png": require("../assets/LigaColombia/Pereira.png"),
+    "Millonarios.png": require("../assets/LigaColombia/Millonarios.png"),
+};
