@@ -1,11 +1,14 @@
 import { useUser } from "@clerk/clerk-react";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Keypair } from "stellar-sdk";
+import ConfirmationMessage from "../components/ConfimationComponent";
+import { ERROR_MESSAGES } from "../components/error";
 import PinVerification from "../components/pin";
 import { teamLogos } from "../components/teamLogos";
 import { useApp } from "./contextUser";
+
 const {
     place_bet,
     claim,
@@ -13,37 +16,101 @@ const {
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function RoomDetail({ }) {
     const { isSignedIn, user, isLoaded } = useUser();
+    const [rooms, setRooms] = useState([]);
 
+    const [status, setStatus] = useState(null); // null | "success" | "error"
+    const [reason, setReason] = useState("");
     const { userx, setUserx } = useApp();
     const [isLoading, setIsLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState("Verifying PIN...");
+    const [done, setdone] = useState(false);
     const [selected, setSelected] = useState(null);
     const params = useLocalSearchParams();
-    const room = {
-        title: params.title,
-        local_team_name: params.local_team_name,
-        away_team_name: params.away_team_name,
-        local_team_logo: params.local_team_logo,
-        away_team_logo: params.away_team_logo,
-        start_time: params.start_time,
-        finish_time: params.finish_time,
-        active: params.active === "true" || params.active === true,
-        bet: params.bet !== "false" && params.bet !== false,
-        users: params.users ? JSON.parse(params.users) : [],
-    };
-    const bet = async (pin) => {
-        console.log("Bet placed on:", selected);
-        const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
-        const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
-        const id_bet = Math.floor(100000 + Math.random() * 900000).toString();
+    useEffect(() => {
+        fetchRooms();
+        console.log("User ID in Rooms:", user.id);
+    }, []);
 
-        //async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
-        await place_bet(userx[0].pub_key, id_bet, "557828", selected, "3000", params.room_id, keypairUser);
-        /**
-         *   Team_local(),
-            Team_away(),
-            Draw(),
-         */};
+    const fetchRooms = async () => {
+        try {
+            const res = await fetch(`http://192.168.1.8:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
+            const data = await res.json();
+            setRooms(data[0]);
+            console.log("Fetched rooms:", data);
+        } catch (error) {
+            console.error("Error fetching rooms:", error);
+        }
+    };
+    const room = {
+        title: `${rooms.local_team_name} vs ${rooms.away_team_name}`,
+        local_team_name: rooms.local_team_name,
+        away_team_name: rooms.away_team_name,
+        local_team_logo: rooms.local_team_logo,
+        away_team_logo: rooms.away_team_logo,
+        start_time: rooms.start_time,
+        finish_time: rooms.finish_time,
+        active: rooms.active === "true" || rooms.active === true,
+        bet: rooms.user_bet !== "false" && rooms.user_bet !== false,
+        users: rooms.room_users ? rooms.room_users : [],
+        /* title: `${item.local_team_name} vs ${item.away_team_name}`,
+         local_team_name: item.local_team_name,
+         away_team_name: item.away_team_name,
+         start_time: item.start_time,
+         finish_time: item.finish_time,
+         active: item.active,
+         bet: item.user_bet,
+         users: JSON.stringify(item.room_users),
+         local_team_logo: item.local_team_logo,
+         away_team_logo: item.away_team_logo,*/
+    };
+    function parseContractError(error) {
+        const match = String(error).match(/Error\(Contract, #(\d+)\)/);
+        if (match) {
+            const code = parseInt(match[1]);
+            const reason = ERROR_MESSAGES[code] || `Unknown error (code ${code})`;
+            return { code, reason };
+        }
+        return { code: null, reason: "Unexpected error occurred." };
+    }
+    const bet = async (pin) => {
+        try {
+            console.log("Bet placed on:", selected);
+            const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
+            const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
+            const id_bet = Math.floor(100000 + Math.random() * 900000).toString();
+
+            //async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
+            await place_bet(userx[0].pub_key, id_bet, "557828", selected, "3000", params.room_id, keypairUser);
+            setIsLoading(false);
+            try {
+                const response = await fetch('http://192.168.1.8:8383/api/updateroomuser', {
+                    method: 'POST', // must be POST to send body
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: selected }), // send your user ID here
+                });
+
+                if (!response.ok) {
+                    console.error('Server responded with error:', response.status);
+                    return;
+                }
+                const data = await response.json();
+                console.log('User data saved successfully:', data);
+
+
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+            setStatus("success");
+        } catch (error) {
+            const { reason } = parseContractError(error);
+            setStatus("error");
+            setReason(reason);
+            setIsLoading(false);
+            return;
+        }
+    };
     const handleBet = async (option) => {
         setSelected(option);
         setIsLoading(true);
@@ -61,7 +128,8 @@ export default function RoomDetail({ }) {
             mode="verify"
             message={loadingMessage}
             onComplete={bet}
-        />)
+
+        />);
     }
     else {
         return (<View style={styles.container}>
@@ -151,7 +219,7 @@ export default function RoomDetail({ }) {
                             room.bet && { opacity: 0.6 },
                         ]}
                         onPress={() => handleBet(option)}
-                        disabled={!room.active || room.bet}
+                    //disabled={!room.active || room.bet}
                     >
                         <Text style={styles.optionText}>
                             {option === "Team_local"
@@ -163,6 +231,20 @@ export default function RoomDetail({ }) {
                     </TouchableOpacity>
                 ))}
             </View>
+            {
+                status && (
+                    <ConfirmationMessage
+                        success={status === "success"}
+                        message={
+                            status === "success"
+                                ? "Operation complete successfully!"
+                                : "Operation failed."
+                        }
+                        reason={reason}
+                        onClose={() => setStatus(null)}
+                    />
+                )
+            }
         </View>)
     }
 }

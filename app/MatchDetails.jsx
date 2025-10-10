@@ -11,6 +11,8 @@ import {
     View,
 } from "react-native";
 import { Keypair } from "stellar-sdk";
+import ConfirmationMessage from "../components/ConfimationComponent";
+import { ERROR_MESSAGES } from "../components/error";
 import PinVerification from "../components/pin";
 import { useApp } from "./contextUser";
 const {
@@ -26,12 +28,24 @@ export default function MatchDetails() {
     const { match } = useLocalSearchParams();
     const router = useRouter();
     const parsedMatch = JSON.parse(match);
-
+    const [status, setStatus] = useState(null); // null | "success" | "error"
+    const [reason, setReason] = useState(null);
     const [minBet, setMinBet] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('Please enter pin to continue...');
     const { userx, setUserx } = useApp();
     const [roomCode, setRoomCode] = useState(null);
+
+    function parseContractError(error) {
+        const match = String(error).match(/Error\(Contract, #(\d+)\)/);
+        if (match) {
+            const code = parseInt(match[1]);
+            const reason = ERROR_MESSAGES[code] || `Unknown error (code ${code})`;
+            return { code, reason };
+        }
+        return { code: null, reason: "Unexpected error occurred." };
+    }
+
     // Simulate room creation (you'll replace this with backend call)
     const handleCreateRoom = async (pin) => {
 
@@ -39,8 +53,6 @@ export default function MatchDetails() {
 
         try {
             // Simulate async backend call
-
-            // Simulate returned code from backend
             const description = `${parsedMatch.local_team_name} vs ${parsedMatch.away_team_name}`;
             const endTime = Math.floor(new Date(parsedMatch.end_time).getTime() / 1000);
             const startTime = Math.floor(new Date(parsedMatch.start_time).getTime() / 1000);
@@ -52,8 +64,18 @@ export default function MatchDetails() {
             setLoadingMessage("Setting game on blockchain...");
             const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
             const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
-            //await setGame(description, endTime, id_game, "44", startTime, team_away, team_local);
             //setLoadingMessage("Creating private bet settings...");
+            try {
+                await setGame(description, endTime, id_game, "200", startTime, team_away, team_local);
+            } catch (err) {
+                const { reason, code } = parseContractError(err);
+                if (code === 210) {
+                    console.log("Game already set, proceeding...");
+                } else {
+                    throw err;
+                }
+            }
+            setLoadingMessage("creating private bet settings...");
 
             await set_private_bet(minBet, id_game, description, keypairUser.publicKey(), id_setting, keypairUser);
             try {
@@ -76,12 +98,19 @@ export default function MatchDetails() {
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
-            setLoadingMessage("Room created successfully 🎉");
+            // Simulate returned code from backend
 
+            setLoadingMessage("Room created successfully 🎉");
+            setStatus("success");
             setRoomCode(id_setting);
         } catch (error) {
-            alert("Error creating room");
             console.error("Error creating room:", error);
+            const { reason, code } = parseContractError(error);
+            if (code === 200) {
+
+            }
+            setStatus("error");
+            setReason(reason);
         } finally {
             setIsLoading(false);
         }
@@ -99,10 +128,15 @@ export default function MatchDetails() {
 
     const handleBeFirstToBet = () => {
         // Navigate to betting screen with roomCode + match info
+
         router.push({
-            pathname: "/BetRoom",
-            params: { match: JSON.stringify(parsedMatch), roomCode },
-        });
+            pathname: "/specificRoom",
+            params: {
+                room_id: roomCode,
+            },
+        })
+
+
     };
     if (isLoading) {
         return (<PinVerification
@@ -198,6 +232,20 @@ export default function MatchDetails() {
                         </View>
                     </View>
                 )}
+                {
+                    status && (
+                        <ConfirmationMessage
+                            success={status === "success"}
+                            message={
+                                status === "success"
+                                    ? "Operation complete successfully!"
+                                    : "Operation failed."
+                            }
+                            reason={reason}
+                            onClose={() => setStatus(null)}
+                        />
+                    )
+                }
             </View>
         );
 

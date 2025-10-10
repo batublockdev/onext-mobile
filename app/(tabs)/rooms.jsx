@@ -61,16 +61,7 @@ export default function Rooms() {
                     pathname: "/specificRoom",
                     params: {
                         room_id: item.room_id,
-                        title: `${item.local_team_name} vs ${item.away_team_name}`,
-                        local_team_name: item.local_team_name,
-                        away_team_name: item.away_team_name,
-                        start_time: item.start_time,
-                        finish_time: item.finish_time,
-                        active: item.active,
-                        bet: item.user_bet,
-                        users: JSON.stringify(item.room_users),
-                        local_team_logo: item.local_team_logo,
-                        away_team_logo: item.away_team_logo,
+
                     },
                 })
 

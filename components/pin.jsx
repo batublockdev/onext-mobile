@@ -35,13 +35,11 @@ export default function PinVerification({ mode = 'register', message, onComplete
             // Operation mode (single PIN)
             setLoading(true);
             try {
-                await new Promise((resolve) => setTimeout(resolve, 1500)); // simulate processing
                 onComplete && onComplete(pinCode);
             } catch (error) {
                 Alert.alert('Error', 'Something went wrong.');
             } finally {
-                setLoading(false);
-                setPin(['', '', '', '']);
+
             }
         }
     };
@@ -65,44 +63,50 @@ export default function PinVerification({ mode = 'register', message, onComplete
             setPin(newPin);
         }
     };
-
-    return (
-        <View style={styles.container}>
-            {message && <Text style={styles.message}>{message}</Text>}
-
-            <Text style={styles.title}>
-                {mode === 'register'
-                    ? step === 1
-                        ? 'Create a 4-digit PIN'
-                        : 'Confirm your PIN'
-                    : 'Enter your PIN'}
-            </Text>
-
-            <View style={styles.pinContainer}>
-                {pin.map((digit, index) => (
-                    <TextInput
-                        key={index}
-                        ref={(ref) => (inputs.current[index] = ref)}
-                        value={digit}
-                        onChangeText={(text) => handleChange(text, index)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        style={styles.input}
-                        secureTextEntry
-                        autoFocus={index === 0}
-                        editable={!loading}
-                    />
-                ))}
+    if (loading) {
+        // show only spinner
+        return (
+            <View style={styles.loadingContainer}>
+                {message && <Text style={styles.message}>{message}</Text>}
+                <ActivityIndicator size="large" color="#007AFF" />
+                <Text style={styles.loadingText}>Processing...</Text>
             </View>
+        );
+    } else {
 
-            {loading && (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#007AFF" />
-                    <Text style={styles.loadingText}>Processing...</Text>
+        return (
+            <View style={styles.container}>
+                {message && <Text style={styles.message}>{message}</Text>}
+
+                <Text style={styles.title}>
+                    {mode === 'register'
+                        ? step === 1
+                            ? 'Create a 4-digit PIN'
+                            : 'Confirm your PIN'
+                        : 'Enter your PIN'}
+                </Text>
+
+                <View style={styles.pinContainer}>
+                    {pin.map((digit, index) => (
+                        <TextInput
+                            key={index}
+                            ref={(ref) => (inputs.current[index] = ref)}
+                            value={digit}
+                            onChangeText={(text) => handleChange(text, index)}
+                            keyboardType="number-pad"
+                            maxLength={1}
+                            style={styles.input}
+                            secureTextEntry
+                            autoFocus={index === 0}
+                            editable={!loading}
+                        />
+                    ))}
                 </View>
-            )}
-        </View>
-    );
+
+
+            </View>
+        );
+    }
 }
 
 const styles = StyleSheet.create({
