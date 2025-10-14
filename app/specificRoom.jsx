@@ -12,13 +12,19 @@ import { useApp } from "./contextUser";
 const {
     place_bet,
     claim,
+    asses_result,
+    execute_distribution
 } = require("../SmartContract/smartcontractOperation");
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function RoomDetail({ }) {
     const { isSignedIn, user, isLoaded } = useUser();
     const [rooms, setRooms] = useState([]);
-
+    const [matchResult, setMatchResult] = useState(null);   // e.g. "Team_local"
+    const [userDecision, setUserDecision] = useState(null); // "accepted" or "rejected"
+    const [claimAvailable, setClaimAvailable] = useState(false);
     const [status, setStatus] = useState(null); // null | "success" | "error"
+    const [pinSend, setpinSend] = useState(null); // null | "success" | "error"
+
     const [reason, setReason] = useState("");
     const { userx, setUserx } = useApp();
     const [isLoading, setIsLoading] = useState(false);
@@ -30,12 +36,83 @@ export default function RoomDetail({ }) {
         fetchRooms();
         console.log("User ID in Rooms:", user.id);
     }, []);
+    const handleClaim = async (pin) => {
+        console.log("User claimed rewards!");
 
+        try {
+
+            //fn execute_distribution(gameId: i128)
+            const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
+            const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
+            await execute_distribution(rooms.match_id, keypairUser);
+            //async function claim(address, setting, claimType, keypairUser)
+            await claim(userx[0].pub_key, params.room_id, "User", keypairUser);
+
+            setStatus("success");
+            setIsLoading(false);
+
+        } catch (error) {
+            console.log("error", error);
+            const { reason, code } = parseContractError(error);
+            console.log("error", code);
+            setStatus("error");
+            setReason(reason);
+            setIsLoading(false);
+            return;
+        }
+
+    };
+    const handleDesition = async (pin) => {
+        try {
+            const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
+            const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
+
+            //async function asses_result(address, setting, game_id, desition) {
+            await asses_result(userx[0].pub_key, params.room_id, rooms.match_id, selected, keypairUser);
+            setIsLoading(false);
+            try {
+                const response = await fetch('http://192.168.1.8:8383/api/updateroomuser', {
+                    method: 'POST', // must be POST to send body
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: selected }), // send your user ID here
+                });
+
+                if (!response.ok) {
+                    console.error('Server responded with error:', response.status);
+                    return;
+                }
+                const data = await response.json();
+                console.log('User data saved successfully:', data);
+
+
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+            setStatus("success");
+            setIsLoading(false);
+
+        } catch (error) {
+            console.log("error", error);
+            const { reason, code } = parseContractError(error);
+            console.log("error", code);
+            setStatus("error");
+            setReason(reason);
+            setIsLoading(false);
+            return;
+        }
+
+    }
     const fetchRooms = async () => {
         try {
             const res = await fetch(`http://192.168.1.8:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
             const data = await res.json();
             setRooms(data[0]);
+            setUserDecision(data[0].user_assest)
+            setUserDecision
+            setMatchResult(data[0].result)
+            setClaimAvailable(true);
             console.log("Fetched rooms:", data);
         } catch (error) {
             console.error("Error fetching rooms:", error);
@@ -72,16 +149,33 @@ export default function RoomDetail({ }) {
         }
         return { code: null, reason: "Unexpected error occurred." };
     }
+    const action = async (pin) => {
+
+        switch (pinSend) {
+            case "play":
+                bet(pin);
+                break;
+            case "assest":
+                handleDesition(pin);
+                break;
+            case "claim":
+                handleClaim(pin);
+                break;
+
+        }
+        // do something
+    }
+
     const bet = async (pin) => {
         try {
             console.log("Bet placed on:", selected);
+            console.log("rooms,", rooms.match_id)
             const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
             const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
             const id_bet = Math.floor(100000 + Math.random() * 900000).toString();
 
             //async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
-            await place_bet(userx[0].pub_key, id_bet, "557828", selected, "3000", params.room_id, keypairUser);
-            setIsLoading(false);
+            await place_bet(userx[0].pub_key, id_bet, rooms.match_id, selected, "30020", params.room_id, keypairUser);
             try {
                 const response = await fetch('http://192.168.1.8:8383/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
@@ -102,18 +196,23 @@ export default function RoomDetail({ }) {
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
+            setIsLoading(false);
+
             setStatus("success");
         } catch (error) {
-            const { reason } = parseContractError(error);
+            console.log("error", error);
+            const { reason, code } = parseContractError(error);
+            console.log("error", code);
             setStatus("error");
             setReason(reason);
             setIsLoading(false);
             return;
         }
     };
-    const handleBet = async (option) => {
+    const handleBet = async (option, send) => {
         setSelected(option);
         setIsLoading(true);
+        setpinSend(send);
 
     };
 
@@ -127,10 +226,11 @@ export default function RoomDetail({ }) {
         return (<PinVerification
             mode="verify"
             message={loadingMessage}
-            onComplete={bet}
+            onComplete={action}
 
         />);
     }
+
     else {
         return (<View style={styles.container}>
             {/* Header */}
@@ -209,28 +309,87 @@ export default function RoomDetail({ }) {
                 />
             </View>
 
-            {/* Betting options */}
+            {/* Betting options or result status */}
             <View style={styles.optionsContainer}>
-                {["Team_local", "Draw", "Team_away"].map((option) => (
-                    <TouchableOpacity
-                        key={option}
-                        style={[
-                            styles.optionButton,
-                            room.bet && { opacity: 0.6 },
-                        ]}
-                        onPress={() => handleBet(option)}
-                    //disabled={!room.active || room.bet}
-                    >
-                        <Text style={styles.optionText}>
-                            {option === "Team_local"
+                {/* CASE 1: User hasn’t bet yet and match still active */}
+                {!room.bet && (
+                    <>
+                        {["Team_local", "Draw", "Team_away"].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={styles.optionButton}
+                                onPress={() => handleBet(option, "play")}
+                            >
+                                <Text style={styles.optionText}>
+                                    {option === "Team_local"
+                                        ? room.local_team_name
+                                        : option === "Draw"
+                                            ? "Empate"
+                                            : room.away_team_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+
+                {/* CASE 2: User already bet but no result yet */}
+                {room.bet && !matchResult && (
+                    <Text style={styles.waitingMessage}>
+                        Esperando resultado del partido... 🕒
+                    </Text>
+                )}
+
+                {/* CASE 3: Result received — show result and buttons */}
+                {matchResult && (
+                    <View style={styles.resultContainer}>
+                        <Text style={styles.resultText}>
+                            🏁 Resultado:{" "}
+                            {matchResult === "Team_local"
                                 ? room.local_team_name
-                                : option === "Draw"
-                                    ? "Empate"
-                                    : room.away_team_name}
+                                : matchResult === "Team_away"
+                                    ? room.away_team_name
+                                    : "Empate"}
                         </Text>
-                    </TouchableOpacity>
-                ))}
+
+                        {/* Accept / Reject buttons */}
+                        {!userDecision && !claimAvailable && (
+                            <View style={styles.decisionButtons}>
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#28A745" }]}
+                                    onPress={() => handleBet("approve", "assest")}
+                                >
+                                    <Text style={styles.decisionText}>Aceptar ✅</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#FF3B30" }]}
+                                    onPress={() => handleBet("reject", "assest")}
+                                >
+                                    <Text style={styles.decisionText}>Rechazar ❌</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Show user's decision */}
+                        {userDecision && !claimAvailable && (
+                            <Text style={styles.userDecision}>
+                                Has {userDecision === "approve" ? "aceptado" : "rechazado"} el resultado.
+                            </Text>
+                        )}
+
+                        {/* Claim button */}
+                        {claimAvailable && (
+                            <TouchableOpacity
+                                style={[styles.decisionButton, { backgroundColor: "#007AFF" }]}
+                                onPress={() => handleBet("x", "claim")}
+                            >
+                                <Text style={styles.decisionText}>Reclamar Recompensa 💰</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
             </View>
+
             {
                 status && (
                     <ConfirmationMessage
@@ -252,11 +411,43 @@ export default function RoomDetail({ }) {
 
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff", padding: 16 },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
+    container: { flex: 1, backgroundColor: "#fff", padding: 16 }, resultContainer: {
+        marginTop: 20,
         alignItems: "center",
+    },
+    resultText: {
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#222",
+        marginBottom: 10,
+    },
+    decisionButtons: {
+        flexDirection: "row",
+        gap: 10,
+    },
+    decisionButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+    },
+    decisionText: {
+        color: "#fff",
+        fontWeight: "bold",
+    },
+    userDecision: {
+        marginTop: 10,
+        fontStyle: "italic",
+        color: "#555",
+    },
+    waitingMessage: {
+        textAlign: "center",
+        color: "#777",
+        fontStyle: "italic",
+        marginTop: 10,
+    },
+    header: {
+
+
         marginBottom: 10,
     },
     roomTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },

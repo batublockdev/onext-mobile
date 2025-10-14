@@ -2,6 +2,7 @@ import * as bip39 from '@scure/bip39';
 import { generateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { Buffer } from 'buffer';
+import * as Crypto from "expo-crypto";
 import { Keypair } from 'stellar-sdk';
 import nacl from 'tweetnacl';
 
@@ -69,11 +70,12 @@ export async function execution(password) {
     // Later: decrypt
     const recoveredRaw = decryptWithPassword(keystore, password);
     const recoveredKp = Keypair.fromRawEd25519Seed(recoveredRaw);
-
+    const id_app = await shortIdFromPubKey(recoveredKp.publicKey());
     return {
         mnemonic,
         publicKey: recoveredKp.publicKey(),
         keystore,
+        id_app
     };
 }
 
@@ -83,4 +85,22 @@ export async function decryptOnly(keystore, password) {
     return {
         key: recoveredRaw
     };
+}
+// ---------- Short ID from public key -----------//
+export async function shortIdFromPubKey(pubKey) {
+    console.log("Generating Short ID from PubKey:", pubKey);
+    // Hash using expo-crypto
+    const hash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        pubKey
+    );
+
+    // Take first 10 hex chars (40 bits)
+    const first40Bits = hash.slice(0, 10);
+
+    // Convert to number and then to 12-digit string
+    const idNum = BigInt("0x" + first40Bits);
+    const shortId = idNum.toString().padStart(12, "0").slice(0, 12);
+    console.log("Short ID from PubKey:", shortId);
+    return shortId;
 }

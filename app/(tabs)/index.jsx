@@ -1,23 +1,54 @@
 import { useUser } from "@clerk/clerk-react";
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSignOut } from "../(auth)/signout";
 import MatchesScreen from '../../components/game';
+import { useApp } from '../contextUser';
 
 const HomeScreen = () => {
+    const { signOutUser } = useSignOut();
     const { isSignedIn, user, isLoaded } = useUser();
+    const { userx, setUserx } = useApp();
+
+
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: `Here’s my player ID: ${userx ? userx[0].id_app : 'N/A'}. Join me in the game!`,
+            });
+        } catch (error) {
+            console.error("Error sharing:", error);
+        }
+    };
+
     return (
         <View style={styles.card}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.playerName}>{user.firstName}, como vas</Text>
                 <View>
+                    <Text style={styles.playerName}>{user.firstName}, ¿cómo vas?</Text>
+                    <Text style={styles.userId}>ID: {userx ? userx[0].id_app : 'N/A'}</Text>
+                </View>
 
+                <View style={styles.rightHeader}>
                     <Text style={styles.pointsText}>Points: 29</Text>
                     <Text style={styles.ranking}>#5</Text>
                 </View>
-
             </View>
 
+            {/* Share & Sign Out Row */}
+            <View style={styles.actionsRow}>
+                <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                    <Ionicons name="share-social-outline" size={18} color="#fff" />
+                    <Text style={styles.shareText}>Share ID</Text>
+                </TouchableOpacity>
 
+                <TouchableOpacity style={styles.signOutButton} onPress={signOutUser}>
+                    <Ionicons name="log-out-outline" size={18} color="#fff" />
+                    <Text style={styles.signOutText}>Sign Out</Text>
+                </TouchableOpacity>
+            </View>
 
             {/* Balances */}
             <View style={styles.balanceContainer}>
@@ -41,62 +72,103 @@ const HomeScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Placeholder for games list */}
+            {/* Games List */}
             <MatchesScreen />
         </View>
     );
+
 }
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#ffffffff",
-        padding: 20,
-        marginBottom: 55,
-
-
+        backgroundColor: "#fff",
+        padding: 25,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginBottom: 8,
+        alignItems: "center",
     },
     playerName: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: "#222",
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#1f2937",
     },
-    ranking: {
-        fontSize: 16,
-        color: "#666",
+    userId: {
+        fontSize: 13,
+        color: "#6b7280",
+        marginTop: 2,
     },
-    points: {
-        marginBottom: 12,
+    rightHeader: {
+        alignItems: "flex-end",
     },
     pointsText: {
         fontSize: 16,
-        color: "#444",
+        fontWeight: "600",
+        color: "#2563eb",
+    },
+    ranking: {
+        fontSize: 14,
+        color: "#9ca3af",
+    },
+    actionsRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 15,
+    },
+    shareButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#10b981",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+    },
+    shareText: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "600",
+        marginLeft: 6,
+    },
+    signOutButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ef4444",
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+    },
+    signOutText: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "600",
+        marginLeft: 6,
     },
     balanceContainer: {
-        backgroundColor: "#f7e6e6ff",
-        borderRadius: 8,
-        height: 120,
         flexDirection: "row",
-        paddingTop: 26,
         justifyContent: "space-around",
-        marginBottom: 16,
-        marginTop: 12,
+        marginVertical: 20,
     },
     balanceBox: {
+        backgroundColor: "#f9fafb",
+        borderRadius: 12,
+        padding: 12,
         alignItems: "center",
+        flex: 1,
+        marginHorizontal: 6,
     },
     balanceLabel: {
         fontSize: 14,
-        color: "#888",
+        color: "#6b7280",
     },
     balanceValue: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#111",
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#111827",
     },
     buttonsRow: {
         flexDirection: "row",
@@ -104,32 +176,16 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
-        backgroundColor: "#35043fff",
+        backgroundColor: "#3b82f6",
+        borderRadius: 10,
         paddingVertical: 10,
-        marginHorizontal: 5,
-        height: 60,
-        justifyContent: "center",
-        textAlign: "center",
-        borderRadius: 8,
+        alignItems: "center",
+        marginHorizontal: 6,
     },
     buttonText: {
-        color: "#e63a3aff",
-        fontSize: 16,
-        textAlign: "center",
+        color: "#fff",
+        fontSize: 15,
         fontWeight: "600",
-    },
-    gamesList: {
-        marginTop: 20,
-        padding: 12,
-        borderWidth: 1,
-        borderStyle: "dashed",
-        borderColor: "#ccc",
-        borderRadius: 8,
-    },
-    placeholderText: {
-        fontSize: 14,
-        color: "#aaa",
-        textAlign: "center",
     },
 });
 

@@ -57,7 +57,14 @@ struct PrivateBet {
   users_invated: vec<address>
 }
  */
-async function set_private_bet(min_amount, game_id, description, admin, id, keypairUser) {
+async function set_private_bet(min_amount, game_id, description, admin, id, keypairUser, users) {
+    //const userNativeToScVal = users.map(user => nativeToScVal(Keypair.fromPublicKey(user).publicKey(), { type: "address" }));
+    const userNativeToScVal = [];
+    for (let i = 0; i < users.length; i++) {
+        console.log("User Public Key:", users[i]);
+        userNativeToScVal.push(nativeToScVal(Keypair.fromPublicKey(users[i]).publicKey(), { type: "address" }));
+    }
+    userNativeToScVal.push(nativeToScVal(Keypair.fromPublicKey(admin).publicKey(), { type: "address" }));
     const privateBet = xdr.ScVal.scvMap([
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("active"),
@@ -85,7 +92,7 @@ async function set_private_bet(min_amount, game_id, description, admin, id, keyp
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("users_invated"),
-            val: xdr.ScVal.scvVec([nativeToScVal(Keypair.fromPublicKey(admin).publicKey(), { type: "address" })]), // vec<address>
+            val: xdr.ScVal.scvVec([...userNativeToScVal]), // vec<address>
         }),
     ]);
     const id_game = nativeToScVal(game_id, { type: "i128" });
@@ -134,7 +141,7 @@ async function place_bet(address, id_bet, game_id, team, amount, setting, keypai
         bet,
     ], keypairUser);
 }
-async function asses_result(address, setting, game_id, desition) {
+async function asses_result(address, setting, game_id, desition, keypairUser) {
     // 1. mint some usdc to be  staked
     //fn assessResult(user: address, setting: i128, game_id: i128, desition: AssessmentKey)
     /**#[contracttype]
@@ -151,9 +158,9 @@ enum AssessmentKey {
     // 5. Call the set_game function
     await funtionExecution("assessResult", [user,
         setting_sent, id_game, desition_sent
-    ], sourceKeypairPlayer1);
+    ], keypairUser);
 }
-async function claim(address, setting, claimType) {
+async function claim(address, setting, claimType, keypairUser) {
     // 1. mint some usdc to be  staked
     //fn claim(user: address, typeClaim: ClaimType, setting: i128)
     /**#[contracttype]
@@ -170,7 +177,22 @@ async function claim(address, setting, claimType) {
     // 5. Call the set_game function
     await funtionExecution("claim", [user
         , claimType_sent, setting_sent
-    ], sourceKeypairAdmin);
+    ], keypairUser);
+}
+async function execute_distribution(id_game, keypairUser) {
+    // 1. mint some usdc to be  staked
+    //fn claim(user: address, typeClaim: ClaimType, setting: i128)
+    /**#[contracttype]
+    enum ClaimType {
+    Summiter(),
+    Protocol(),
+    User()
+    } */
+    const id_game_sent = nativeToScVal(id_game, { type: "i128" });
+
+
+    // 5. Call the set_game function
+    await funtionExecution("execute_distribution", [id_game_sent], keypairUser);
 }
 async function summit_result(address, description, game_id, team) {
     // 1. mint some usdc to be  staked
@@ -425,6 +447,7 @@ module.exports = {
     simulateTransaction,
     prepareTransaction,
     sendTransaction,
-    set_private_bet
+    set_private_bet,
+    execute_distribution
 };
 

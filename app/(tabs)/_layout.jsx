@@ -18,7 +18,7 @@ const TabsLayout = () => {
 
     const handlePinComplete = async (pin) => {
         // Call the wallet creation function with the PIN as password
-        const { mnemonic, publicKey, keystore } = await execution(pin);
+        const { mnemonic, publicKey, keystore, id_app } = await execution(pin);
         console.log("Mnemonic:", mnemonic);
         console.log("Public Key:", publicKey);
 
@@ -28,7 +28,7 @@ const TabsLayout = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "x", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, }), // send your user ID here
+                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "x", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, id_app: id_app }), // send your user ID here
             });
 
             if (!response.ok) {
@@ -47,7 +47,6 @@ const TabsLayout = () => {
         setexistUser(true);
         // Here you can call your create account function
     };
-    if (!isSignedIn) return <Redirect href={'/(auth)/sign-in'} />
 
     useEffect(() => {
         console.log("User ID:", user.id); // Log the user ID to verify it's being accessed correctly
@@ -85,6 +84,7 @@ const TabsLayout = () => {
         fetchUser();
     }, []);
 
+    if (!isSignedIn) return <Redirect href={'/(auth)/sign-in'} />
     if (!existUser) {
         return (<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
 
