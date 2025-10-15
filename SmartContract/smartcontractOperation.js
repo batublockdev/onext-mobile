@@ -41,7 +41,7 @@ const server = new StellarRpc.Server(
 );
 
 
-const bettingContractAddress = "CDH5TRCEGLDBELPPV6WDLBETUEZCEMUGJONWQHVRJKCQGEPK6NAVT4DX";
+const bettingContractAddress = "CDSAPRYTG7RKHUDNTHNJJYKXSXGZ52R7NCO5EV3K27JJJUUOLQFRXX5V";
 const bettingContract = new Contract(bettingContractAddress);
 
 //fn set_private_bet(user: address, privateData: PrivateBet, game_id: i128)
@@ -289,7 +289,7 @@ async function setGame(description, endTime, id, league, startTime, team_away, t
     const pubKey = xdr.ScVal.scvBytes(pubKeyRaw);
 
     // 5. Call the set_game function
-    await funtionExecution("set_game", [game, signature, pubKey], sourceKeypairAdmin);
+    await funtionExecution("set_game", [game, signature], sourceKeypairAdmin);
 
 }
 async function request_result_summiter(address, amount) {

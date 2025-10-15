@@ -44,7 +44,16 @@ export default function RoomDetail({ }) {
             //fn execute_distribution(gameId: i128)
             const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
             const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
-            await execute_distribution(rooms.match_id, keypairUser);
+            try {
+                await execute_distribution(rooms.match_id, keypairUser);
+            } catch (err) {
+                const { reason, code } = parseContractError(err);
+                if (code === 221) {
+                    console.log("Game already set, proceeding...");
+                } else {
+                    throw err;
+                }
+            }
             //async function claim(address, setting, claimType, keypairUser)
             await claim(userx[0].pub_key, params.room_id, "User", keypairUser);
 
@@ -109,10 +118,17 @@ export default function RoomDetail({ }) {
             const res = await fetch(`http://192.168.1.8:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
             const data = await res.json();
             setRooms(data[0]);
-            setUserDecision(data[0].user_assest)
-            setUserDecision
+
+            if (data[0].user_assest == "false") {
+                setUserDecision(null)
+
+            } else {
+                setUserDecision(data[0].user_assest)
+                setClaimAvailable(true);
+
+
+            }
             setMatchResult(data[0].result)
-            setClaimAvailable(true);
             console.log("Fetched rooms:", data);
         } catch (error) {
             console.error("Error fetching rooms:", error);
@@ -175,7 +191,7 @@ export default function RoomDetail({ }) {
             const id_bet = Math.floor(100000 + Math.random() * 900000).toString();
 
             //async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
-            await place_bet(userx[0].pub_key, id_bet, rooms.match_id, selected, "30020", params.room_id, keypairUser);
+            await place_bet(userx[0].pub_key, id_bet, rooms.match_id, selected, "50", params.room_id, keypairUser);
             try {
                 const response = await fetch('http://192.168.1.8:8383/api/updateroomuser', {
                     method: 'POST', // must be POST to send body

@@ -1,17 +1,35 @@
 import { useUser } from "@clerk/clerk-react";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Keypair } from "stellar-sdk";
 import { useSignOut } from "../(auth)/signout";
+import { DepositComponent } from '../../components/buttonSend';
 import MatchesScreen from '../../components/game';
+import PinVerification from "../../components/pin";
 import { useApp } from '../contextUser';
-
 const HomeScreen = () => {
+    const { ensureTrustline, startDeposit } = require('../../anchor/anchor');
+    const { decryptOnly } = require('../../self-wallet/wallet');
+    const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState(null); // null | "success" | "error"
+    const [loadingMessage, setLoadingMessage] = useState('...');
+    const [reason, setReason] = useState(null);
+    const [depositUrl, setDepositUrl] = useState(null);
     const { signOutUser } = useSignOut();
     const { isSignedIn, user, isLoaded } = useUser();
     const { userx, setUserx } = useApp();
 
 
-
+    function parseContractError(error) {
+        const match = String(error).match(/Error\(Contract, #(\d+)\)/);
+        if (match) {
+            const code = parseInt(match[1]);
+            const reason = ERROR_MESSAGES[code] || `Unknown error (code ${code})`;
+            return { code, reason };
+        }
+        return { code: null, reason: "Unexpected error occurred." };
+    }
     const handleShare = async () => {
         try {
             await Share.share({
@@ -21,64 +39,98 @@ const HomeScreen = () => {
             console.error("Error sharing:", error);
         }
     };
+    const handleDeposit = async (pin) => {
+        try {
+            const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
+            const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
+            await ensureTrustline(keypairUser);
+            const url = await startDeposit("USDC", keypairUser);
+            setDepositUrl(url);
+            setStatus("sucess")
+            setIsLoading(false);
+        } catch (error) {
+            console.log("error", error);
+            const { reason, code } = parseContractError(error);
+            console.log("error", code);
+            setStatus("error");
+            setReason(reason);
+            setIsLoading(false);
+            return;
+        }
+    };
+    if (isLoading) {
+        return (<PinVerification
+            mode="verify"
+            message={loadingMessage}
+            onComplete={handleDeposit}
 
-    return (
-        <View style={styles.card}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.playerName}>{user.firstName}, ¿cómo vas?</Text>
-                    <Text style={styles.userId}>ID: {userx ? userx[0].id_app : 'N/A'}</Text>
+        />);
+    }
+    if (status == "sucesss") {
+        return (
+            <DepositComponent depositUrl={depositUrl} />
+
+        )
+    }
+
+    else {
+        return (
+            <View style={styles.card}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <View>
+                        <Text style={styles.playerName}>{user.firstName}, ¿cómo vas?</Text>
+                        <Text style={styles.userId}>ID: {userx ? userx[0].id_app : 'N/A'}</Text>
+                    </View>
+
+                    <View style={styles.rightHeader}>
+                        <Text style={styles.pointsText}>Points: 29</Text>
+                        <Text style={styles.ranking}>#5</Text>
+                    </View>
                 </View>
 
-                <View style={styles.rightHeader}>
-                    <Text style={styles.pointsText}>Points: 29</Text>
-                    <Text style={styles.ranking}>#5</Text>
+                {/* Share & Sign Out Row */}
+                <View style={styles.actionsRow}>
+                    <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+                        <Ionicons name="share-social-outline" size={18} color="#fff" />
+                        <Text style={styles.shareText}>Share ID</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.signOutButton} onPress={signOutUser}>
+                        <Ionicons name="log-out-outline" size={18} color="#fff" />
+                        <Text style={styles.signOutText}>Sign Out</Text>
+                    </TouchableOpacity>
                 </View>
-            </View>
 
-            {/* Share & Sign Out Row */}
-            <View style={styles.actionsRow}>
-                <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={18} color="#fff" />
-                    <Text style={styles.shareText}>Share ID</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.signOutButton} onPress={signOutUser}>
-                    <Ionicons name="log-out-outline" size={18} color="#fff" />
-                    <Text style={styles.signOutText}>Sign Out</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Balances */}
-            <View style={styles.balanceContainer}>
-                <View style={styles.balanceBox}>
-                    <Text style={styles.balanceLabel}>USD</Text>
-                    <Text style={styles.balanceValue}>0.02</Text>
+                {/* Balances */}
+                <View style={styles.balanceContainer}>
+                    <View style={styles.balanceBox}>
+                        <Text style={styles.balanceLabel}>USD</Text>
+                        <Text style={styles.balanceValue}>0.02</Text>
+                    </View>
+                    <View style={styles.balanceBox}>
+                        <Text style={styles.balanceLabel}>Trust</Text>
+                        <Text style={styles.balanceValue}>0.08</Text>
+                    </View>
                 </View>
-                <View style={styles.balanceBox}>
-                    <Text style={styles.balanceLabel}>Trust</Text>
-                    <Text style={styles.balanceValue}>0.08</Text>
+
+                {/* Buttons */}
+                <View style={styles.buttonsRow}>
+                    <TouchableOpacity style={styles.button} onPress={() => setIsLoading(true)}>
+                        <Text style={styles.buttonText}>Deposit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button}>
+                        <Text style={styles.buttonText}>Withdraw</Text>
+                    </TouchableOpacity>
                 </View>
+
+                {/* Games List */}
+                <MatchesScreen />
             </View>
+        );
 
-            {/* Buttons */}
-            <View style={styles.buttonsRow}>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Deposit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Withdraw</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Games List */}
-            <MatchesScreen />
-        </View>
-    );
-
+    }
 }
-
 const styles = StyleSheet.create({
     card: {
         backgroundColor: "#fff",
