@@ -18,8 +18,12 @@ export default function ConfirmationMessage({ success, message, reason, onClose 
                     {success ? "Success!" : "Something went wrong"}
                 </Text>
 
-                <Text style={styles.message}>{message}</Text>
+                {/* ✅ Show message in both success and error cases */}
+                {message && (
+                    <Text style={styles.message}>{message}</Text>
+                )}
 
+                {/* Show reason only for failed transactions */}
                 {!success && reason ? (
                     <Text style={styles.reason}>{reason}</Text>
                 ) : null}
@@ -45,10 +49,10 @@ const styles = StyleSheet.create({
         elevation: 999,
     },
     successBg: {
-        backgroundColor: '#dcfce7', // light green background
+        backgroundColor: '#dcfce7',
     },
     errorBg: {
-        backgroundColor: '#fee2e2', // light red background
+        backgroundColor: '#fee2e2',
     },
     content: {
         alignItems: 'center',

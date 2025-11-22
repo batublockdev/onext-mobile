@@ -1,6 +1,5 @@
 import { useAuth } from '@clerk/clerk-expo';
 import { Redirect, Stack } from 'expo-router';
-import SafeScreen from '../../components/SafeScreen';
 
 
 export default function AuthRoutesLayout() {
@@ -10,9 +9,7 @@ export default function AuthRoutesLayout() {
 
 
     return (
-        <SafeScreen >
 
-            <Stack />
-        </SafeScreen >
+        <Stack />
     )
 }

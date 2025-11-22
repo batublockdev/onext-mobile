@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { teamLogos } from "../../components/teamLogos";
 
 export default function Rooms() {
@@ -27,35 +27,12 @@ export default function Rooms() {
         }
     };
     // ✅ Add or Join Room
-    const handleJoinRoom = async () => {
-        if (!code.trim()) return Alert.alert("Please enter a code");
 
-        try {
-            const res = await fetch(`http://192.168.1.8:8383/api/rooms/${code}`);
-            const data = await res.json();
-
-            if (!data || !data.id) {
-                Alert.alert("Room not found");
-                return;
-            }
-
-            // Navigate to the Room detail page
-            router.push({
-                pathname: "/room/[id]",
-                params: { id: data.id },
-            });
-        } catch (error) {
-            Alert.alert("Error joining room");
-            console.error(error);
-        }
-    };
 
     const renderRoom = ({ item }) => (
         <TouchableOpacity
-            style={[
-                styles.roomCard,
-                { backgroundColor: item.active ? "#E0F7FA" : "#F8F8F8" },
-            ]}
+            activeOpacity={0.85}
+            style={[styles.roomCard, { backgroundColor: item.active ? "#E0F7FA" : "#F8F8F8" }]}
             onPress={() =>
                 router.push({
                     pathname: "/specificRoom",
@@ -93,7 +70,7 @@ export default function Rooms() {
             </Text>
 
             <Text style={styles.roomStatus}>
-                Status: {item.active ? "Active" : "Inactive"} | Your bet:{" "}
+                Status: {item.active ? "Active" : "Inactive"} | Your predic:{" "}
                 {item.user_bet && item.user_bet !== "false" ? item.user_bet : "No bet"}
             </Text>
         </TouchableOpacity>
@@ -110,63 +87,89 @@ export default function Rooms() {
                 contentContainerStyle={styles.list}
             />
 
-            <View style={styles.joinContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter room code"
-                    value={code}
-                    onChangeText={setCode}
-                    placeholderTextColor="#999"
-                />
-                <TouchableOpacity style={styles.joinButton} onPress={handleJoinRoom}>
-                    <Text style={styles.joinButtonText}>Join</Text>
-                </TouchableOpacity>
-            </View>
+
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#fff", padding: 16 },
-    title: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
-    list: { paddingBottom: 80 },
-    roomCard: {
-        padding: 14,
-        borderRadius: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#ddd",
+    container: {
+        flex: 1,
+        backgroundColor: "#F9FAFB",
+        paddingHorizontal: 16,
+        paddingTop: 20,
     },
+
+    title: {
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#222",
+        marginBottom: 16,
+        textAlign: "center",
+    },
+
+    list: {
+        paddingBottom: 20,
+    },
+
+    roomCard: {
+        borderRadius: 14,
+        paddingVertical: 16,
+        paddingHorizontal: 14,
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: "#E0E0E0",
+    },
+
     teamsContainer: {
         flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
-        alignItems: "center",
+        marginBottom: 10,
     },
-    team: { alignItems: "center", width: "40%" },
-    logo: { width: 50, height: 50, resizeMode: "contain" },
-    teamName: { fontSize: 14, fontWeight: "600", marginTop: 6 },
-    vs: { fontSize: 16, fontWeight: "bold" },
-    roomTime: { color: "#555", marginTop: 10, fontSize: 13 },
-    roomStatus: { color: "#222", marginTop: 4, fontSize: 13 },
-    joinContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginTop: 10,
-    },
-    input: {
+
+    team: {
         flex: 1,
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 8,
-        padding: 10,
-        marginRight: 8,
-        color: "#000",
+        alignItems: "center",
     },
-    joinButton: {
-        backgroundColor: "#2196F3",
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+
+    logo: {
+        width: 50,
+        height: 50,
+        resizeMode: "contain",
+        marginBottom: 6,
     },
-    joinButtonText: { color: "#fff", fontWeight: "bold" },
+
+    teamName: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#333",
+        textAlign: "center",
+    },
+
+    vs: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#999",
+        marginHorizontal: 8,
+    },
+
+    roomTime: {
+        fontSize: 13,
+        color: "#666",
+        textAlign: "center",
+        marginBottom: 6,
+    },
+
+    roomStatus: {
+        fontSize: 13,
+        color: "#444",
+        textAlign: "center",
+        fontWeight: "500",
+    },
 });

@@ -5,9 +5,11 @@ import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-get-random-values'; // MUST be first
+import { Keypair } from 'stellar-sdk';
 import PinVerification from '../../components/pin';
 import { useApp } from '../contextUser';
-const { execution } = require('../../self-wallet/wallet');
+
+const { execution, createAccount, Trustline, fund } = require('../../self-wallet/wallet');
 const TabsLayout = () => {
 
     const { isSignedIn } = useAuth()
@@ -18,9 +20,23 @@ const TabsLayout = () => {
 
     const handlePinComplete = async (pin) => {
         // Call the wallet creation function with the PIN as password
-        const { mnemonic, publicKey, keystore, id_app } = await execution(pin);
+        const { mnemonic, publicKey, keystore, id_app, secrect } = await execution(pin);
         console.log("Mnemonic:", mnemonic);
         console.log("Public Key:", publicKey);
+        console.log("key secrect", secrect);
+
+
+        try {
+            const newUser = Keypair.fromSecret(secrect);
+            await createAccount(newUser.publicKey());
+            await Trustline(newUser);
+            await fund(newUser.publicKey());
+        } catch (error) {
+            console.log('error ', error);
+            res.status(500)
+        }
+
+
 
         try {
             const response = await fetch('http://192.168.1.8:8383/api/usersave', {
@@ -99,34 +115,38 @@ const TabsLayout = () => {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Home',
+                    title: "Home",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="home" color={color} size={size} />
+                        <Ionicons name="home-outline" color={color} size={size} />
                     ),
                     headerShown: false,
-                    tabBarLabel: 'Home',
-                }} />
+                    tabBarLabel: "Home",
+                }}
+            />
+
             <Tabs.Screen
                 name="rooms"
                 options={{
-                    title: 'Profile',
+                    title: "Salones",
                     tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="person" color={color} size={size} />
+                        <Ionicons name="people-outline" color={color} size={size} />
                     ),
                     headerShown: false,
-                    tabBarLabel: 'Profile',
-                }} />
-            <Tabs.Screen
-                name="settings"
-                options={{
-                    title: 'Settings',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="settings" color={color} size={size} />
-                    ),
-                    headerShown: false,
-                    tabBarLabel: 'Settings',
-                }} />
+                    tabBarLabel: "Salones",
+                }}
+            />
 
+            <Tabs.Screen
+                name="summiter"
+                options={{
+                    title: "Summiter",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="construct-outline" color={color} size={size} />
+                    ),
+                    headerShown: false,
+                    tabBarLabel: "Summiter",
+                }}
+            />
         </Tabs></>
         )
     }

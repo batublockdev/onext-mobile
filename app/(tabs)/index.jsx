@@ -1,25 +1,70 @@
 import { useUser } from "@clerk/clerk-react";
-import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from "react";
+import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Keypair } from "stellar-sdk";
 import { useSignOut } from "../(auth)/signout";
-import { DepositComponent } from '../../components/buttonSend';
+import { sendSep24Deposit } from '../../anchor/walletAnchor';
+import DepositComponent from '../../components/buttonSend';
 import MatchesScreen from '../../components/game';
+import MatchCard from '../../components/MatchCard';
+
 import PinVerification from "../../components/pin";
 import { useApp } from '../contextUser';
+
 const HomeScreen = () => {
     const { ensureTrustline, startDeposit } = require('../../anchor/anchor');
     const { decryptOnly } = require('../../self-wallet/wallet');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // null | "success" | "error"
+    const [USDCBalance, setUSDCBalance] = useState("0"); // null | "success" | "error"
+    const [TRUSTBalance, setTRUSTBalance] = useState("0"); // null | "success" | "error"
+
     const [loadingMessage, setLoadingMessage] = useState('...');
     const [reason, setReason] = useState(null);
     const [depositUrl, setDepositUrl] = useState(null);
     const { signOutUser } = useSignOut();
     const { isSignedIn, user, isLoaded } = useUser();
     const { userx, setUserx } = useApp();
+    const StellarSdk = require("stellar-sdk");
+    const server = new StellarSdk.Horizon.Server(
+        "https://horizon-testnet.stellar.org",
+    );
+    const USDCasset = new StellarSdk.Asset("USD", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
+    const TrustAsset = new StellarSdk.Asset("TRUST", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
 
+    useEffect(() => {
+        UserBalance();
+    }, []);
+    useEffect(() => {
+        UserBalance();
+    }, [userx]);
+    const UserBalance = async () => {
+
+        if (userx) {
+            const account = await server.loadAccount(userx[0].pub_key);
+            const assetUsdcBalance = account.balances.find(
+                (b) => b.asset_code === USDCasset.getCode() && b.asset_issuer === USDCasset.getIssuer()
+            );
+            const asseTrustBalance = account.balances.find(
+                (b) => b.asset_code === TrustAsset.getCode() && b.asset_issuer === TrustAsset.getIssuer()
+            );
+
+            if (assetUsdcBalance) {
+                console.log(`${USDCasset.getCode()} balance: ${assetUsdcBalance.balance}`);
+                setUSDCBalance(assetUsdcBalance.balance);
+            } else {
+                console.log(`No ${USDCasset.getCode()} balance found`);
+            }
+            if (asseTrustBalance) {
+                console.log(`${TrustAsset.getCode()} balance: ${asseTrustBalance.balance}`);
+                setTRUSTBalance(asseTrustBalance.balance);
+            } else {
+                console.log(`No ${TrustAsset.getCode()} balance found`);
+            }
+        }
+
+
+    };
 
     function parseContractError(error) {
         const match = String(error).match(/Error\(Contract, #(\d+)\)/);
@@ -39,13 +84,62 @@ const HomeScreen = () => {
             console.error("Error sharing:", error);
         }
     };
+
+    function Section({ title, children }) {
+        return (
+            <View style={{ marginTop: 30 }}>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>{title}</Text>
+                    <Text style={styles.sectionShow}>Show All</Text>
+                </View>
+                <View style={styles.sectionContent}>{children}</View>
+            </View>
+        );
+    }
+    const matches = [
+        {
+            match_id: 1,
+            league: "Premier League",
+            week: 10,
+            team1: "Newcastle",
+            team2: "Chelsea",
+            logo1: "https://...",
+            logo2: "https://...",
+            score1: 0,
+            score2: 3,
+            minute: 83,
+            gameState: "final"
+        },
+        {
+            match_id: 2,
+            league: "La Liga",
+            week: 12,
+            team1: "Barcelona",
+            team2: "Betis",
+            logo1: "https://...",
+            logo2: "https://...",
+            score1: 0,
+            score2: 0,
+            minute: 20,
+            gameState: "final"
+        }
+    ];
+
+
     const handleDeposit = async (pin) => {
         try {
             const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
             const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
-            await ensureTrustline(keypairUser);
-            const url = await startDeposit("USDC", keypairUser);
-            setDepositUrl(url);
+            //await ensureTrustline(keypairUser);
+            //const url = await startDeposit("USDC", keypairUser);
+            const response = await sendSep24Deposit({
+                assetCode: "USDC",            // or whatever asset anchor supports
+                userKeypair: keypairUser,
+                amount: "10",                 // optional, in asset units
+                destinationAccount: keypairUser.publicKey, // where funds go
+            });
+            console.log(response.url);
+            setDepositUrl(response.url);
             setStatus("sucess")
             setIsLoading(false);
         } catch (error) {
@@ -66,179 +160,232 @@ const HomeScreen = () => {
 
         />);
     }
-    if (status == "sucesss") {
+    if (status == "sucess") {
         return (
             <DepositComponent depositUrl={depositUrl} />
 
         )
     }
-
     else {
         return (
-            <View style={styles.card}>
+            <ScrollView style={styles.container}>
+
                 {/* Header */}
                 <View style={styles.header}>
-                    <View>
-                        <Text style={styles.playerName}>{user.firstName}, ¿cómo vas?</Text>
-                        <Text style={styles.userId}>ID: {userx ? userx[0].id_app : 'N/A'}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <View style={{ marginLeft: 10 }}>
+                            <Text style={styles.username}>{user.firstName}</Text>
+                            <Text style={styles.userId}>ID: {userx ? userx[0].id_app : 'N/A'}</Text>
+                        </View>
                     </View>
 
-                    <View style={styles.rightHeader}>
-                        <Text style={styles.pointsText}>Points: 29</Text>
-                        <Text style={styles.ranking}>#5</Text>
+                    <View style={styles.headerIcons}>
+                        <Text style={styles.icon}>🔍</Text>
+                        <Text style={styles.icon}>🔄</Text>
                     </View>
                 </View>
 
-                {/* Share & Sign Out Row */}
-                <View style={styles.actionsRow}>
-                    <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                        <Ionicons name="share-social-outline" size={18} color="#fff" />
-                        <Text style={styles.shareText}>Share ID</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.signOutButton} onPress={signOutUser}>
-                        <Ionicons name="log-out-outline" size={18} color="#fff" />
-                        <Text style={styles.signOutText}>Sign Out</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Balances */}
-                <View style={styles.balanceContainer}>
-                    <View style={styles.balanceBox}>
-                        <Text style={styles.balanceLabel}>USD</Text>
-                        <Text style={styles.balanceValue}>0.02</Text>
-                    </View>
-                    <View style={styles.balanceBox}>
-                        <Text style={styles.balanceLabel}>Trust</Text>
-                        <Text style={styles.balanceValue}>0.08</Text>
-                    </View>
+                {/* Total Bets */}
+                <View style={styles.totalBox}>
+                    <Text style={styles.totalLabel}>Saldo</Text>
+                    <Text style={styles.totalValue}>{parseFloat(USDCBalance).toFixed(2)}</Text>
+                    <Text style={styles.totalChange}>{parseFloat(TRUSTBalance).toFixed(2)}</Text>
                 </View>
 
                 {/* Buttons */}
                 <View style={styles.buttonsRow}>
-                    <TouchableOpacity style={styles.button} onPress={() => setIsLoading(true)}>
-                        <Text style={styles.buttonText}>Deposit</Text>
+                    <TouchableOpacity style={styles.lightBtn}>
+                        <Text style={styles.lightBtnText}>Deposit</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.button}>
-                        <Text style={styles.buttonText}>Withdraw</Text>
+
+                    <TouchableOpacity style={styles.darkBtn}>
+                        <Text style={styles.darkBtnText}>Withdraw</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Games List */}
-                <MatchesScreen />
-            </View>
+                {/* My Matches */}
+                <Section title="My Matches">
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+                        {matches.map((m) => (
+                            <MatchCard key={m.match_id} data={m} />
+                        ))}
+                    </ScrollView>
+
+                </Section>
+
+                {/* Watchlist */}
+                <Section title="Watchlist">
+                    <MatchesScreen />
+                </Section>
+
+            </ScrollView>
+
         );
 
     }
 }
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: "#fff",
-        padding: 25,
-        shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+    container: {
+        backgroundColor: "#f6f8fa",
+        padding: 20,
     },
+
+    /* Header */
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
-    playerName: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#1f2937",
+    avatar: {
+        width: 45,
+        height: 45,
+        borderRadius: 30,
     },
-    userId: {
-        fontSize: 13,
-        color: "#6b7280",
-        marginTop: 2,
-    },
-    rightHeader: {
-        alignItems: "flex-end",
-    },
-    pointsText: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "#2563eb",
-    },
-    ranking: {
-        fontSize: 14,
-        color: "#9ca3af",
-    },
-    actionsRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 15,
-    },
-    shareButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#10b981",
-        borderRadius: 10,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-    },
-    shareText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-        marginLeft: 6,
-    },
-    signOutButton: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#ef4444",
-        borderRadius: 10,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-    },
-    signOutText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-        marginLeft: 6,
-    },
-    balanceContainer: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        marginVertical: 20,
-    },
-    balanceBox: {
-        backgroundColor: "#f9fafb",
-        borderRadius: 12,
-        padding: 12,
-        alignItems: "center",
-        flex: 1,
-        marginHorizontal: 6,
-    },
-    balanceLabel: {
-        fontSize: 14,
-        color: "#6b7280",
-    },
-    balanceValue: {
+    username: {
+        color: "#222",
         fontSize: 18,
         fontWeight: "700",
-        color: "#111827",
     },
+    userId: {
+        color: "#777",
+        fontSize: 12,
+    },
+    headerIcons: {
+        flexDirection: "row",
+    },
+    icon: {
+        fontSize: 22,
+        marginLeft: 15,
+        color: "#444",
+    },
+
+    /* Total */
+    totalBox: {
+        marginTop: 20,
+        alignItems: "center",
+    },
+    totalLabel: {
+        color: "#777",
+        fontSize: 14,
+    },
+    totalValue: {
+        color: "#000",
+        fontSize: 34,
+        fontWeight: "800",
+        marginTop: 5,
+    },
+    totalChange: {
+        color: "#0bbf63",
+        fontSize: 14,
+        marginTop: 5,
+    },
+
+    /* Buttons */
     buttonsRow: {
         flexDirection: "row",
         justifyContent: "space-between",
+        marginTop: 25,
     },
-    button: {
-        flex: 1,
-        backgroundColor: "#3b82f6",
-        borderRadius: 10,
-        paddingVertical: 10,
+    lightBtn: {
+        backgroundColor: "#e9ecef",
+        width: "48%",
+        padding: 14,
+        borderRadius: 15,
         alignItems: "center",
-        marginHorizontal: 6,
     },
-    buttonText: {
+    darkBtn: {
+        backgroundColor: "#000",
+        width: "48%",
+        padding: 14,
+        borderRadius: 15,
+        alignItems: "center",
+    },
+    lightBtnText: {
+        color: "#000",
+        fontWeight: "600",
+    },
+    darkBtnText: {
         color: "#fff",
-        fontSize: 15,
+        fontWeight: "600",
+    },
+
+    /* Section */
+    sectionHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#111",
+    },
+    sectionShow: {
+        color: "#0bbf63",
+        fontWeight: "600",
+    },
+    sectionContent: {
+        marginTop: 15,
+    },
+
+    /* Match Card */
+    matchCard: {
+        backgroundColor: "#fff",
+        padding: 18,
+        borderRadius: 16,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 15,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    matchTeam: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#333",
+    },
+    matchCenter: {
+        alignItems: "center",
+    },
+    matchTime: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#0bbf63",
+    },
+    matchDate: {
+        color: "#999",
+        fontSize: 12,
+    },
+
+    /* Watchlist */
+    watchCard: {
+        backgroundColor: "#fff",
+        padding: 18,
+        borderRadius: 16,
+        marginBottom: 15,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    watchTeam: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#333",
+    },
+    watchOdds: {
+        fontSize: 20,
+        marginTop: 5,
+        color: "#000",
+        fontWeight: "700",
+    },
+    watchChange: {
+        marginTop: 4,
+        color: "#0bbf63",
         fontWeight: "600",
     },
 });
+
 
 export default HomeScreen

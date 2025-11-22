@@ -41,7 +41,7 @@ const server = new StellarRpc.Server(
 );
 
 
-const bettingContractAddress = "CDSAPRYTG7RKHUDNTHNJJYKXSXGZ52R7NCO5EV3K27JJJUUOLQFRXX5V";
+const bettingContractAddress = "CA37G7GYBMJ5WDLXOXN2Q7ZCPQX57FNBK3Q7FXPWTMFZA3DMXKCQSFIC";
 const bettingContract = new Contract(bettingContractAddress);
 
 //fn set_private_bet(user: address, privateData: PrivateBet, game_id: i128)
@@ -57,6 +57,21 @@ struct PrivateBet {
   users_invated: vec<address>
 }
  */
+//fn claim_refund(user: address, setting: i128) -> i128
+async function claim_refund(address, setting, keypairUser) {
+    // 1. mint some usdc to be  staked
+    //await mint_usdc(address, amount);
+
+    const user = nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" });
+    const setting_sent = nativeToScVal(setting, { type: "i128" });
+
+    // 5. Call the set_game function
+    const result = await funtionExecution("claim_refund", [
+        user,
+        setting_sent,
+    ], keypairUser);
+    return result;
+}
 async function set_private_bet(min_amount, game_id, description, admin, id, keypairUser, users) {
     //const userNativeToScVal = users.map(user => nativeToScVal(Keypair.fromPublicKey(user).publicKey(), { type: "address" }));
     const userNativeToScVal = [];
@@ -103,7 +118,7 @@ async function set_private_bet(min_amount, game_id, description, admin, id, keyp
     ], keypairUser);
 
 }
-async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
+async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser, collateral) {
     // 1. mint some usdc to be  staked
     //await mint_usdc(address, amount);
 
@@ -116,13 +131,15 @@ async function place_bet(address, id_bet, game_id, team, amount, setting, keypai
             key: xdr.ScVal.scvSymbol("amount_bet"),
             val: nativeToScVal(amount, { type: "i128" }),
         }),
+
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("bet"),
             val: xdr.ScVal.scvVec([nativeToScVal(team, { type: "symbol" })]),
         }),
+
         new xdr.ScMapEntry({
-            key: xdr.ScVal.scvSymbol("betType"),
-            val: xdr.ScVal.scvVec([nativeToScVal("Private", { type: "symbol" })]),
+            key: xdr.ScVal.scvSymbol("collateralUsd"),
+            val: nativeToScVal(collateral, { type: "bool" }),
         }),
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("gameid"),
@@ -141,7 +158,7 @@ async function place_bet(address, id_bet, game_id, team, amount, setting, keypai
         bet,
     ], keypairUser);
 }
-async function asses_result(address, setting, game_id, desition, keypairUser) {
+async function asses_result(address, setting, desition, keypairUser) {
     // 1. mint some usdc to be  staked
     //fn assessResult(user: address, setting: i128, game_id: i128, desition: AssessmentKey)
     /**#[contracttype]
@@ -151,13 +168,12 @@ enum AssessmentKey {
 } */
     const user = nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" });
     const setting_sent = nativeToScVal(setting, { type: "i128" });
-    const id_game = nativeToScVal(game_id, { type: "i128" });
     const desition_sent = xdr.ScVal.scvVec([nativeToScVal(desition, { type: "symbol" })]);
 
 
     // 5. Call the set_game function
     await funtionExecution("assessResult", [user,
-        setting_sent, id_game, desition_sent
+        setting_sent, desition_sent
     ], keypairUser);
 }
 async function claim(address, setting, claimType, keypairUser) {
@@ -175,11 +191,12 @@ async function claim(address, setting, claimType, keypairUser) {
 
 
     // 5. Call the set_game function
-    await funtionExecution("claim", [user
+    const result = await funtionExecution("claim", [user
         , claimType_sent, setting_sent
     ], keypairUser);
+    return result;
 }
-async function execute_distribution(id_game, keypairUser) {
+async function execute_distribution(setting, keypairUser) {
     // 1. mint some usdc to be  staked
     //fn claim(user: address, typeClaim: ClaimType, setting: i128)
     /**#[contracttype]
@@ -188,13 +205,14 @@ async function execute_distribution(id_game, keypairUser) {
     Protocol(),
     User()
     } */
-    const id_game_sent = nativeToScVal(id_game, { type: "i128" });
+    const id_setting_sent = nativeToScVal(setting, { type: "i128" });
+
 
 
     // 5. Call the set_game function
-    await funtionExecution("execute_distribution", [id_game_sent], keypairUser);
+    await funtionExecution("execute_distribution", [id_setting_sent], keypairUser);
 }
-async function summit_result(address, description, game_id, team) {
+async function summit_result(address, description, game_id, team, keypairUser, setting) {
     // 1. mint some usdc to be  staked
     //await mint_usdc(address, amount);
     /*#[contracttype]
@@ -205,9 +223,15 @@ struct ResultGame {
   id: i128,
   pause: bool,
   result: BetKey
+  enum BetKey {
+  Team_local(),
+  Team_away(),
+  Draw(),
+  Cancel()
+}
 */
 
-
+    console.log("starting sumit resul");
     const result = xdr.ScVal.scvMap([
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("description"),
@@ -233,19 +257,23 @@ struct ResultGame {
             key: xdr.ScVal.scvSymbol("result"),
             val: xdr.ScVal.scvVec([nativeToScVal(team, { type: "symbol" })]),
         }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("setting"),
+            val: nativeToScVal(setting, { type: "i128" }),
+        }),
     ]);
 
     // 5. Call the set_game function
     await funtionExecution("summitResult", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
+        nativeToScVal(setting, { type: "i128" }),
         result,
-    ], sourceKeypairSummiter);
+    ], keypairUser);
 }
 
 
-async function setGame(description, endTime, id, league, startTime, team_away, team_local) {
+async function setGame(description, endTime, id, league, startTime, team_away, team_local, signatureRaw, keyuser) {
 
-    const publicKey = 'GAZN6DSHNS43KZWX6DYA3I5WSMBZYB7CJEK53RZBO66KIXYIGQNLLQKE';
 
     // 1. Build the Game struct
     const game = await set_GameStruct(
@@ -254,7 +282,6 @@ async function setGame(description, endTime, id, league, startTime, team_away, t
         id,
         league,
         startTime,
-        publicKey,
         team_away,
         team_local
     );
@@ -275,24 +302,18 @@ async function setGame(description, endTime, id, league, startTime, team_away, t
     const gameBytes = Buffer.from(gameXdr, 'base64');
 
     // 3. Sign the raw bytes
-    const signatureRaw = sourceKeypairAdmin.sign(gameBytes);
     if (signatureRaw.length !== 64) {
         throw new Error(`Signature length is ${signatureRaw.length}, expected 64 bytes`);
     }
 
-    // 4. Convert to SCVals
-    const pubKeyRaw = sourceKeypairAdmin.rawPublicKey();
-    if (pubKeyRaw.length !== 32) {
-        throw new Error(`Public key length is ${pubKeyRaw.length}, expected 32 bytes`);
-    }
+
     const signature = xdr.ScVal.scvBytes(signatureRaw);
-    const pubKey = xdr.ScVal.scvBytes(pubKeyRaw);
 
     // 5. Call the set_game function
-    await funtionExecution("set_game", [game, signature], sourceKeypairAdmin);
+    await funtionExecution("set_game", [game, signature], keyuser);
 
 }
-async function request_result_summiter(address, amount) {
+async function request_result_summiter(address, amount, keyuser) {
     // 1. mint some usdc to be  staked
     //await mint_usdc(address, amount);
 
@@ -300,7 +321,7 @@ async function request_result_summiter(address, amount) {
     await funtionExecution("request_result_summiter", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         nativeToScVal(amount, { type: "i128" }),
-    ], sourceKeypairSummiter);
+    ], keyuser);
 }
 async function buildTransation(funtionName, params, sourceKeypair) {
     const sourceAccount = await server.getAccount(sourceKeypair.publicKey());
@@ -361,7 +382,11 @@ async function sendTransaction(preparedTransaction) {
                 let returnValue = getResponse.returnValue;
                 console.log("✅ Transaction result:", JSON.stringify(returnValue, null, 2));
                 console.log("Transation :", transactionMeta);
-                return returnValue.value();
+
+
+                //console.log("🟦 Diagnostic Events:", diagEvents);
+                //console.log("🟩 Contract Events:", contractEvents);
+                return returnValue;
 
             } else {
                 throw `Transaction failed: ${getResponse.resultXdr}`;
@@ -375,13 +400,12 @@ async function sendTransaction(preparedTransaction) {
         console.log(JSON.stringify(err));
     }
 }
-async function set_GameStruct(description, endTime, id, league, startTime, summiter, team_away, team_local) {
+
+
+async function set_GameStruct(description, endTime, id, league, startTime, team_away, team_local) {
 
     const game = xdr.ScVal.scvMap([
-        new xdr.ScMapEntry({
-            key: xdr.ScVal.scvSymbol("Checker"),
-            val: xdr.ScVal.scvVec([]), // vec<address>
-        }),
+
         new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("active"),
             val: xdr.ScVal.scvBool(false),
@@ -407,10 +431,6 @@ async function set_GameStruct(description, endTime, id, league, startTime, summi
             val: xdr.ScVal.scvU32(startTime),
         }),
         new xdr.ScMapEntry({
-            key: xdr.ScVal.scvSymbol("summiter"),
-            val: nativeToScVal(Keypair.fromPublicKey(summiter).publicKey(), { type: "address" }),
-        }),
-        new xdr.ScMapEntry({
             key: xdr.ScVal.scvSymbol("team_away"),
             val: nativeToScVal(team_away, { type: "i128" }),
         }),
@@ -430,7 +450,7 @@ async function funtionExecution(functionName, paramsFunc, sourceKeypair) {
     const preparedTransaction = await prepareTransaction(tx, sourceKeypair);
     const result = await sendTransaction(preparedTransaction);
     console.log('result:', result);
-    return true;
+    return result;
 }
 //setGame();
 
@@ -448,6 +468,7 @@ module.exports = {
     prepareTransaction,
     sendTransaction,
     set_private_bet,
-    execute_distribution
+    execute_distribution,
+    claim_refund
 };
 

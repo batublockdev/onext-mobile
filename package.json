@@ -20,6 +20,7 @@
     "@react-navigation/native": "^7.1.8",
     "@scure/bip39": "^2.0.1",
     "@stellar/stellar-sdk": "^14.2.0",
+    "@stellar/typescript-wallet-sdk": "^1.9.0",
     "base64-arraybuffer": "^1.0.2",
     "bip39": "^3.1.0",
     "buffer": "^6.0.3",

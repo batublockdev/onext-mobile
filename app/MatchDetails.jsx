@@ -21,6 +21,8 @@ const {
     set_private_bet,
     claim,
     setGame,
+    claim_refund,
+    set_GameStruct
 } = require("../SmartContract/smartcontractOperation");
 const { decryptOnly } = require('../self-wallet/wallet');
 
@@ -117,7 +119,6 @@ export default function MatchDetails() {
     const handleCreateRoom = async (pin) => {
 
 
-
         try {
             const description = `${parsedMatch.local_team_name} vs ${parsedMatch.away_team_name}`;
             const endTime = Math.floor(new Date(parsedMatch.end_time).getTime() / 1000);
@@ -140,7 +141,7 @@ export default function MatchDetails() {
             //1760212800u32
             //1760212800u32
             // 3️⃣ Add one hour (3600 seconds)
-            const plusOne7minUTC = new Date(nowUTC.getTime() + 420 * 1000);
+            const plusOne7minUTC = new Date(nowUTC.getTime() + 220 * 1000);
             const plusOne14minUTC = new Date(nowUTC.getTime() + 840 * 1000);
             console.log(plusOne14minUTC);
             console.log("1760212800");
@@ -165,8 +166,34 @@ export default function MatchDetails() {
             const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
             const keypairUser = Keypair.fromRawEd25519Seed(keyUser.key);
             //setLoadingMessage("Creating private bet settings...");
+
+            const game = {
+                description,
+                timeEndstampForStellar,
+                id_game,
+                leage: "20",
+                timeStartstampForStellar,
+                team_away,
+                team_local
+            };
+
+            const response = await fetch('http://192.168.1.8:8383/sign-game', {
+                method: 'POST', // must be POST to send body
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ game: game }), // send your user ID here
+            });
+
+            if (!response.ok) {
+                console.error('Server responded with error:', response.status);
+                return;
+            }
+            const data = await response.json();
+            console.log('User data saved successfully:', data.signature);
+            const sig = Buffer.from(data.signature, "base64");
             try {
-                await setGame(description, timeEndstampForStellar, id_game, "200", timeStartstampForStellar, team_away, team_local);
+                await setGame(description, timeEndstampForStellar, id_game, "20", timeStartstampForStellar, team_away, team_local, sig, keypairUser);
             } catch (err) {
                 const { reason, code } = parseContractError(err);
                 if (code === 210) {
@@ -175,16 +202,30 @@ export default function MatchDetails() {
                     throw err;
                 }
             }
-            setLoadingMessage("creating private bet settings...");
 
-            await set_private_bet(minBet, id_game, description, keypairUser.publicKey(), id_setting, keypairUser, usersPubk);
+
+            setLoadingMessage("creating private bet settings...");
+            const responsex = await fetch('http://192.168.1.8:8383/api/next', {
+                method: 'GET', // must be POST to send body
+            });
+            if (!responsex.ok) {
+                console.error('Server responded with error:', responsex.status);
+                return;
+            }
+            const dataid = await responsex.json();
+            console.log('Next room id:', dataid.nextRoomId);
+
+
+            console.log('see  :');
+            console.log('User data saved successfully:', dataid);
+            await set_private_bet(minBet, id_game, description, keypairUser.publicKey(), dataid.nextRoomId, keypairUser, usersPubk);
             try {
                 const response = await fetch('http://192.168.1.8:8383/api/insertrooms', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: id_setting, start_time: nowUTC2, finish_time: nowUTC3, title: description, active: false, id_game: parsedMatch.match_id, minBet: minBet, users: users }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: dataid.nextRoomId, start_time: nowUTC3, finish_time: nowUTC2, title: description, active: false, id_game: parsedMatch.match_id, minBet: minBet, users: users }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -202,7 +243,7 @@ export default function MatchDetails() {
 
             setLoadingMessage("Room created successfully 🎉");
             setStatus("success");
-            setRoomCode(id_setting);
+            setRoomCode(dataid.nextRoomId);
         } catch (error) {
             if (error == "Invalid password or corrupted keystore") {
                 setStatus("error");
@@ -210,9 +251,11 @@ export default function MatchDetails() {
             } else {
                 console.error("Error creating room:", error);
                 const { reason, code } = parseContractError(error);
+                const errorMsg =
+                    error.message || error.reason || "An unexpected error occurred.";
 
                 setStatus("error");
-                setReason(reason);
+                setReason(errorMsg);
             }
 
         } finally {
@@ -228,13 +271,17 @@ export default function MatchDetails() {
 
     const handleBeFirstToBet = () => {
         // Navigate to betting screen with roomCode + match info
-
-        router.push({
-            pathname: "/specificRoom",
-            params: {
-                room_id: roomCode,
-            },
-        })
+        if (status == "success") {
+            router.push({
+                pathname: "/specificRoom",
+                params: {
+                    room_id: roomCode,
+                },
+            })
+            setStatus(null);
+        } else {
+            setStatus(null);
+        }
 
 
     };
@@ -388,7 +435,7 @@ export default function MatchDetails() {
                                     : "Operation failed."
                             }
                             reason={reason}
-                            onClose={() => setStatus(null)}
+                            onClose={handleBeFirstToBet}
                         />
                     )
                 }

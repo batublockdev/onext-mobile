@@ -24,7 +24,7 @@ const StellarSdk = require("stellar-sdk");
 const server = new StellarSdk.Horizon.Server(
     "https://horizon-testnet.stellar.org",
 );
-const anchor = 'https://testanchor.stellar.org';
+const anchor = 'https://previewstellar.moneygram.com/.well-known/stellar.toml';
 
 
 const asset = new Asset("USDC", "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");

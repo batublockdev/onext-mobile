@@ -1,8 +1,7 @@
-import { useSignIn } from '@clerk/clerk-expo'
-import { Link, useRouter } from 'expo-router'
-import React from 'react'
-import { LinearGradient } from 'expo-linear-gradient'; // Ensure expo-linear-gradient is installed
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { useSignIn } from '@clerk/clerk-expo';
+import { Link, useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Page() {
     const { signIn, setActive, isLoaded } = useSignIn()
@@ -46,122 +45,106 @@ export default function Page() {
     }
 
     return (
-        <LinearGradient
-            colors={['#6B7280', '#111827']} // Dark gradient for a modern look
+        <KeyboardAvoidingView
             style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
-
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter email"
-                    placeholderTextColor="#9CA3AF"
-                    autoCapitalize="none"
-                    value={emailAddress}
-                    onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Enter password"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={true}
-                    value={password}
-                    onChangeText={(password) => setPassword(password)}
-                />
-            </View>
-
-            <TouchableOpacity
-                style={styles.button}
-                onPress={onSignInPress}
-                activeOpacity={0.7}
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
             >
-                <LinearGradient
-                    colors={['#3B82F6', '#60A5FA']} // Vibrant blue gradient
-                    style={styles.buttonGradient}
-                >
-                    <Text style={styles.buttonText}>Sign In</Text>
-                </LinearGradient>
-            </TouchableOpacity>
+                <Text style={styles.title}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to continue</Text>
 
-            <View style={styles.signupRow}>
-                <Text style={styles.signupText}>Don't have an account? </Text>
-                <Link href="/sign-up">
-                    <Text style={styles.signupLink}>Sign Up</Text>
-                </Link>
-            </View>
-        </LinearGradient>
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter email"
+                        placeholderTextColor="#9CA3AF"
+                        autoCapitalize="none"
+                        value={emailAddress}
+                        onChangeText={setEmailAddress}
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter password"
+                        placeholderTextColor="#9CA3AF"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                </View>
+
+                <TouchableOpacity style={styles.button} onPress={onSignInPress}>
+                    <Text style={styles.buttonText}>Sign In</Text>
+                </TouchableOpacity>
+
+                <View style={styles.signupRow}>
+                    <Text style={styles.signupText}>Don't have an account? </Text>
+                    <Link href="/sign-up">
+                        <Text style={styles.signupLink}>Sign Up</Text>
+                    </Link>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 40,
+        backgroundColor: "#111827", // solid dark background
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: "center",
+        padding: 20,
     },
     title: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: '#FFFFFF',
-        textAlign: 'center',
-        marginBottom: 8,
-        letterSpacing: 0.5,
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "bold",
+        marginBottom: 10,
+        textAlign: "center",
     },
     subtitle: {
+        color: "#9CA3AF",
         fontSize: 16,
-        color: '#D1D5DB',
-        textAlign: 'center',
-        marginBottom: 32,
+        marginBottom: 20,
+        textAlign: "center",
     },
     inputContainer: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     input: {
-        backgroundColor: '#1F2937', // Dark neumorphic base
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        fontSize: 16,
-        color: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#374151',
-        shadowColor: '#000',
-        shadowOffset: { width: 4, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5, // For Android shadow
+        backgroundColor: "#1F2937",
+        color: "#fff",
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginBottom: 10,
     },
     button: {
-        borderRadius: 12,
-        overflow: 'hidden', // Ensure gradient stays within bounds
-        marginBottom: 24,
-    },
-    buttonGradient: {
-        padding: 16,
-        alignItems: 'center',
+        backgroundColor: "#3B82F6",
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: "center",
     },
     buttonText: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        fontWeight: '700',
-        letterSpacing: 0.5,
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     },
     signupRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 20,
     },
     signupText: {
-        color: '#D1D5DB',
-        fontSize: 14,
+        color: "#9CA3AF",
     },
     signupLink: {
-        color: '#60A5FA',
-        fontSize: 14,
-        fontWeight: '600',
-        textDecorationLine: 'underline',
+        color: "#3B82F6",
+        fontWeight: "bold",
     },
 });

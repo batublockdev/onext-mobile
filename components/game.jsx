@@ -16,6 +16,7 @@ const MatchesScreen = () => {
             try {
                 const response = await fetch('http://192.168.1.8:8383/api/data');
                 const data = await response.json();
+                console.log(data);
                 setMatches(data);
             } catch (error) {
                 console.error('Error fetching matches:', error);
@@ -32,8 +33,32 @@ const MatchesScreen = () => {
             </View>
         );
     }
+    const limitText = (text, max) => {
+        return text.length > max ? text.substring(0, max) + "..." : text;
+    };
+    const dateHour = (start) => {
+        const date = new Date(start);
+
+        const hour = date.getUTCHours().toString().padStart(2, "0") + ":" +
+            date.getUTCMinutes().toString().padStart(2, "0");
+
+        const day = date.getUTCDate();
+        const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+        return hour
+    };
+    const dateDate = (start) => {
+        const date = new Date(start);
+
+        const hour = date.getUTCHours().toString().padStart(2, "0") + ":" +
+            date.getUTCMinutes().toString().padStart(2, "0");
+
+        const day = date.getUTCDate();
+        const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+        return day + " " + month
+    };
 
     const renderItem = ({ item }) => (
+
 
         <Link
             href={{
@@ -42,26 +67,33 @@ const MatchesScreen = () => {
             }}
             asChild
         >
-            <TouchableOpacity style={styles.matchCard}
-            >
-                <View style={styles.teamsContainer}>
-                    <View style={styles.team}>
-                        <Image source={teamLogos[item.local_team_logo]} style={styles.logo} />
-                        <Text style={styles.teamName}>{item.local_team_name}</Text>
-                    </View>
+            <TouchableOpacity style={styles.card}>
+                {/* Left team */}
+                <View style={styles.teamSection}>
+                    <Image
+                        source={teamLogos[item.local_team_logo]}
 
-                    <Text style={styles.vs}>VS</Text>
-
-                    <View style={styles.team}>
-                        <Image source={teamLogos[item.away_team_logo]} style={styles.logo} />
-                        <Text style={styles.teamName}>{item.away_team_name}</Text>
-                    </View>
+                        style={styles.logo}
+                    />
+                    <Text style={styles.teamName}>{limitText(item.local_team_name, 8)}</Text>
                 </View>
 
-                <Text style={styles.dateText}>
-                    {new Date(item.start_time).toLocaleString()}
-                </Text>
+                {/* Middle time */}
+                <View style={styles.centerSection}>
+                    <Text style={styles.time}>{dateHour(item.start_time)}</Text>
+                    <Text style={styles.date}>{dateDate(item.start_time)}</Text>
+                </View>
+
+                {/* Right team */}
+                <View style={styles.teamSectionRight}>
+                    <Image
+                        source={teamLogos[item.away_team_logo]}
+                        style={styles.logo}
+                    />
+                    <Text style={styles.teamName}>{limitText(item.away_team_name, 8)}</Text>
+                </View>
             </TouchableOpacity>
+
         </Link>
     );
 
@@ -71,59 +103,62 @@ const MatchesScreen = () => {
             keyExtractor={(item) => item.match_id.toString()}
             renderItem={renderItem}
             contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false} // 👈 hides scrollbar
+
         />
     );
 };
-
 const styles = StyleSheet.create({
-    loadingContainer: {
-        padding: 20,
-        alignItems: 'center',
+    card: {
+        flexDirection: "row",
+        backgroundColor: "#fff",
+        padding: 16,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "space-between",
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+        marginBottom: 10,
+        marginHorizontal: 8,
     },
-    loadingText: {
+
+    teamSection: {
+        alignItems: "center",
+    },
+    teamSectionRight: {
+        alignItems: "center",
+    },
+
+    teamName: {
         fontSize: 16,
-        color: '#888',
-    },
-    listContainer: {
-        padding: 10,
-    },
-    matchCard: {
-        backgroundColor: '#c2c2c2ff',
-        padding: 15,
-        borderRadius: 12,
-        marginBottom: 12,
-        alignItems: 'center',
-    },
-    teamsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '90%',
-    },
-    team: {
-        alignItems: 'center',
-        width: '40%',
-    },
-    logo: {
-        width: 50,
-        height: 50,
+        fontWeight: "600",
         marginBottom: 6,
     },
-    teamName: {
-        color: 'white',
-        fontSize: 14,
-        textAlign: 'center',
+
+    logo: {
+        width: 40,
+        height: 40,
+        resizeMode: "contain",
     },
-    vs: {
-        color: '#FFD700',
-        fontSize: 16,
-        fontWeight: 'bold',
+
+    centerSection: {
+        alignItems: "center",
     },
-    dateText: {
-        color: '#642c2cff',
+
+    time: {
+        fontSize: 20,
+        fontWeight: "700",
+        color: "#ff6a00",
+    },
+
+    date: {
         fontSize: 12,
-        marginTop: 8,
+        color: "gray",
     },
 });
+
 
 export default MatchesScreen;
