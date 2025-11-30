@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 import { Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 
 import { useSignOut } from "../(auth)/signout";
-import PrivateKeyImport from "../../components/importprivatekey";
 import { useApp } from '../contextUser';
+import PrivateKeyImport from "../../components/importprivatekey";
 export default function ProfileScreen() {
-    const { userx, setUserx, setKeypair } = useApp();
+    const { userx, setUserx } = useApp();
     const [importPkey, setImport] = useState(false);
     const walletAddress = userx ? userx[0]?.pub_key : 'N/A'; // dynamic
     const username = userx ? userx[0]?.username : '?';
@@ -60,7 +60,7 @@ export default function ProfileScreen() {
                     <View style={styles.row}>
                         <Text style={styles.userId}>{userId}</Text>
                         <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
-                            <Ionicons name="share-social-outline" size={18} color="#35D787" />
+                            <Ionicons name="share-social-outline" size={18} color="#000703ff" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -70,7 +70,7 @@ export default function ProfileScreen() {
                     <QRCode
                         value={walletAddress}
                         size={200}
-                        color="#35D787"
+                        color="white"
                         backgroundColor="transparent"
                     />
 
@@ -85,18 +85,18 @@ export default function ProfileScreen() {
                     {/* Actions */}
                     <View style={styles.actionRow}>
                         <TouchableOpacity style={styles.actionBtn}>
-                            <Ionicons name="copy-outline" size={22} color="#35D787" />
+                            <Ionicons name="copy-outline" size={22} color="#000" />
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.actionBtn}>
-                            <Ionicons name="share-outline" size={22} color="#35D787" />
+                            <Ionicons name="share-outline" size={22} color="#000" />
                         </TouchableOpacity>
 
                     </View>
                 </View>
 
                 {/* LOG OUT */}
-                <TouchableOpacity style={styles.logoutBtn} onPress={() => { signOutUser(); setKeypair(null); }}>
+                <TouchableOpacity style={styles.logoutBtn} onPress={signOutUser}>
                     <Text style={{ color: "white", fontWeight: "bold" }}>Log Out</Text>
                 </TouchableOpacity>
 
@@ -107,106 +107,86 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+    container: { flex: 1, padding: 20, alignItems: "center" },
 
-    /* MAIN */
-    container: {
-        flex: 1,
-        padding: 20,
-        alignItems: "center",
-        backgroundColor: "#0A0F14",
-    },
-
-    /* HEADER */
-    profileHeader: {
-        alignItems: "center",
-        marginBottom: 30
-    },
-
+    profileHeader: { alignItems: "center", marginBottom: 30 },
     profileCircle: {
         width: 90,
         height: 90,
-        backgroundColor: "#12171D",  // matches card style
+        backgroundColor: "#000",
         borderRadius: 50,
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: 10,
-        borderWidth: 1,
-        borderColor: "#1E252D",
+        marginBottom: 10
     },
-
-    username: {
-        fontSize: 21,
-        fontWeight: "700",
-        color: "#FFFFFF"
-    },
-
+    username: { fontSize: 21, fontWeight: "700", color: "#000" },
     userId: {
-        fontSize: 15,
-        color: "#9CA3AF",
-        textAlign: "center",
+        fontSize: 15, color: "#555", textAlign: "center",
     },
 
-    row: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8
-    },
-
+    row: { flexDirection: "row", alignItems: "center", gap: 8 },
     iconBtn: {
         padding: 5,
-        backgroundColor: "#12171D",
-        borderRadius: 50,
-        borderWidth: 1,
-        borderColor: "#1E252D",
+        backgroundColor: "#e6e6e6",
+        borderRadius: 50
     },
 
-    /* QR CARD */
     qrCard: {
         padding: 20,
-        backgroundColor: "#12171D",
+        backgroundColor: "#0E1F2F",
         borderRadius: 20,
         alignItems: "center",
-        width: "100%",
-        borderWidth: 1,
-        borderColor: "#1E252D",
+        width: "100%"
+    },
+
+    selectorRow: {
+        flexDirection: "row",
+        gap: 10,
+        marginTop: 20
+    },
+
+    selectorBtn: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: "#1c2d3f"
+    },
+
+    selectorActive: {
+        backgroundColor: "#007AFF"
     },
 
     walletText: {
-        color: "#FFFFFF",
+        color: "white",
         marginTop: 15,
         fontSize: 15,
         textAlign: "center",
     },
 
     warningText: {
-        color: "#9CA3AF",
+        color: "#aaa",
         marginTop: 6,
-        fontSize: 12,
+        fontSize: 12
     },
 
     actionRow: {
         flexDirection: "row",
         gap: 20,
-        marginTop: 20,
+        marginTop: 20
     },
 
     actionBtn: {
         padding: 12,
-        backgroundColor: "#1A222C",
-        borderRadius: 50,
-        borderWidth: 1,
-        borderColor: "#2A323D",
+        backgroundColor: "white",
+        borderRadius: 50
     },
 
-    /* LOGOUT */
     logoutBtn: {
         marginTop: 40,
-        backgroundColor: "#FF6A6A",
+        backgroundColor: "red",
         padding: 15,
         width: "90%",
         borderRadius: 12,
         alignItems: "center"
-    },
+    }
 });
-
-

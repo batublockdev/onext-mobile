@@ -6,10 +6,9 @@ const AppContext = createContext();
 // 2️⃣ Provide it globally
 export const AppProvider = ({ children }) => {
     const [userx, setUserx] = useState(null);
-    const [keypair, setKeypair] = useState(null);
 
     return (
-        <AppContext.Provider value={{ userx, setUserx, keypair, setKeypair }}>
+        <AppContext.Provider value={{ userx, setUserx }}>
             {children}
         </AppContext.Provider>
     );

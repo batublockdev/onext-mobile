@@ -1,47 +1,61 @@
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRef, useState, useEffect } from "react";
+import {
+    ActivityIndicator,
+    Keyboard,
+    KeyboardAvoidingView,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
+    StyleSheet,
+    Platform,
+} from "react-native";
 
-export default function PinVerification({ mode = 'register', message, onComplete }) {
-    const [step, setStep] = useState(mode === 'register' ? 1 : 2);
-    const [firstPin, setFirstPin] = useState('');
-    const [pin, setPin] = useState(['', '', '', '']);
+export default function PinVerification({
+    mode = "register",
+    message,
+    status, // "success" | "error" | null (comes from parent)
+    onComplete,
+}) {
+    const [step, setStep] = useState(mode === "register" ? 1 : 2);
+    const [firstPin, setFirstPin] = useState("");
+    const [pin, setPin] = useState(["", "", "", ""]);
     const [loading, setLoading] = useState(false);
     const inputs = useRef([]);
-    const [focusedIndex, setFocusedIndex] = useState(null);
+
+    // 🔥 Reset PIN when parent sends status (success or error)
+    useEffect(() => {
+        if (status) {
+            setPin(["", "", "", ""]);
+            setTimeout(() => {
+                inputs.current[0]?.focus();
+            }, 100);
+        }
+    }, [status]);
 
     const handlePin = async (pinCode) => {
-        if (mode === 'register') {
+        if (mode === "register") {
             if (step === 1) {
-                // Save first PIN and ask for verification
                 setFirstPin(pinCode);
-                setPin(['', '', '', '']);
+                setPin(["", "", "", ""]);
                 setStep(2);
                 inputs.current[0].focus();
-
             } else {
-                // Verify PIN
                 if (pinCode === firstPin) {
                     setLoading(true);
-                    await new Promise((resolve) => setTimeout(resolve, 1000)); // simulate processing
-                    onComplete && onComplete(pinCode);
-
+                    await new Promise((res) => setTimeout(res, 300));
+                    onComplete(pinCode);
                 } else {
-                    Alert.alert('Error', 'PINs do not match. Try again.');
-                    setPin(['', '', '', '']);
+                    setPin(["", "", "", ""]);
                     setStep(1);
                     inputs.current[0].focus();
                 }
             }
         } else {
-            // Operation mode (single PIN)
             setLoading(true);
-            try {
-                onComplete && onComplete(pinCode);
-            } catch (error) {
-                Alert.alert('Error', 'Something went wrong.');
-            } finally {
-
-            }
+            await new Promise((res) => setTimeout(res, 200));
+            onComplete(pinCode);
+            setLoading(false);
         }
     };
 
@@ -54,109 +68,94 @@ export default function PinVerification({ mode = 'register', message, onComplete
             if (index < 3) {
                 inputs.current[index + 1].focus();
             } else {
-                // All 4 digits entered → trigger handlePin
-                const pinCode = newPin.join('');
-                handlePin(pinCode);
+                handlePin(newPin.join(""));
             }
-        } else if (text === '') {
+        } else if (text === "") {
             const newPin = [...pin];
-            newPin[index] = '';
+            newPin[index] = "";
             setPin(newPin);
         }
     };
-    if (loading) {
-        // show only spinner
-        return (
-            <View style={styles.loadingContainer}>
-                {message && <Text style={styles.message}>{message}</Text>}
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>Processing...</Text>
-            </View>
-        );
-    } else {
 
-        return (
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 20} // adjust offset if you have header
+    return (
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
             >
-                <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, justifyContent: "center", alignItems: "center" }}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    {/* Your current content */}
-                    <View style={styles.container}>
-                        <Text style={styles.title}>
-                            {mode === "register"
-                                ? step === 1
-                                    ? "Create a 4-digit PIN"
-                                    : "Confirm your PIN"
-                                : "Enter your PIN"}
-                        </Text>
+                <View style={styles.container}>
+                    <Text style={styles.title}>
+                        {mode === "register"
+                            ? step === 1
+                                ? "Crea tu PIN de 4 dígitos"
+                                : "Confirma tu PIN"
+                            : "Ingresa tu PIN"}
+                    </Text>
 
-                        <View style={styles.pinContainer}>
-                            {pin.map((digit, index) => (
-                                <TextInput
-                                    key={index}
-                                    ref={(ref) => (inputs.current[index] = ref)}
-                                    value={digit}
-                                    onChangeText={(text) => handleChange(text, index)}
-                                    keyboardType="number-pad"
-                                    maxLength={1}
-                                    style={[
-                                        styles.input,
-                                        focusedIndex === index && styles.inputFocused,
-                                    ]}
-                                    secureTextEntry
-                                    onFocus={() => setFocusedIndex(index)}
-                                    onBlur={() => setFocusedIndex(null)}
-                                    editable={!loading}
-                                />
-                            ))}
-                        </View>
+                    <View style={styles.pinContainer}>
+                        {pin.map((digit, index) => (
+                            <TextInput
+                                key={index}
+                                ref={(ref) => (inputs.current[index] = ref)}
+                                value={digit}
+                                onChangeText={(text) => handleChange(text, index)}
+                                keyboardType="number-pad"
+                                maxLength={1}
+                                style={styles.input}
+                                secureTextEntry
+                            />
+                        ))}
                     </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        );
-    }
+
+                    {/* Status from parent */}
+                    {message && !loading && (
+                        <Text
+                            style={[
+                                styles.feedbackText,
+                                status === "error" && styles.errorText,
+                                status === "success" && styles.successText,
+                            ]}
+                        >
+                            {message}
+                        </Text>
+                    )}
+
+                    {loading && (
+                        <ActivityIndicator
+                            size="large"
+                            color="#007AFF"
+                            style={{ marginTop: 20 }}
+                        />
+                    )}
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 }
 
 const styles = StyleSheet.create({
+    scrollContent: {
+        flexGrow: 1,
+        justifyContent: "center",
+        paddingHorizontal: 30,
+        paddingTop: 20,
+        paddingBottom: 50,
+        backgroundColor: "#0D0D0D",
+    },
+
     container: {
-        flex: 1,
-        backgroundColor: "#F9FAFB",
-        justifyContent: "center",
+        width: "100%",
         alignItems: "center",
-    },
-
-    loadingContainer: {
-        flex: 1,
-        backgroundColor: "#F9FAFB",
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-    loadingText: {
-        marginTop: 12,
-        fontSize: 16,
-        color: "#4B5563",
-        fontWeight: "500",
-    },
-
-    message: {
-        color: "#007AFF",
-        fontSize: 14,
-        marginBottom: 10,
-        textAlign: "center",
-        fontWeight: "500",
     },
 
     title: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#111827",
-        marginBottom: 32,
+        marginBottom: 25,
+        color: "#E9F5EC",
         textAlign: "center",
     },
 
@@ -164,27 +163,35 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         width: "80%",
-        marginBottom: 40,
+        marginBottom: 20,
     },
 
     input: {
-        width: 55,
-        height: 55,
-        backgroundColor: "#FFFFFF",
-        borderRadius: 10,
+        width: 60,
+        height: 60,
+        backgroundColor: "#1A1A1A",
+        borderRadius: 14,
+        borderWidth: 2,
+        borderColor: "#2D2D2D",
         textAlign: "center",
-        fontSize: 24,
-        color: "#111827",
-        borderWidth: 1.5,
-        borderColor: "#E5E7EB",
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        elevation: 2,
+        fontSize: 26,
+        color: "#E9F5EC",
+        elevation: 4,
     },
 
-    inputFocused: {
-        borderColor: "#007AFF",
+    feedbackText: {
+        marginTop: 8,
+        fontSize: 16,
+        fontWeight: "600",
+        textAlign: "center",
+        color: "#E9F5EC",
+    },
+
+    errorText: {
+        color: "#FF5252",
+    },
+
+    successText: {
+        color: "#00E676",
     },
 });

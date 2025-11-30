@@ -18,21 +18,6 @@ const {
 } = require("@stellar/stellar-sdk");
 import { Buffer } from 'buffer';
 global.Buffer = Buffer;
-//const { mint_Trust } = require("./trust_token");
-//const { mint_usdc } = require("./usdc_token");
-
-//await mint_Trust("GAZN6DSHNS43KZWX6DYA3I5WSMBZYB7CJEK53RZBO66KIXYIGQNLLQKE", 1000n);
-const secret = "SAO5QJMENIQ5K2Q7CK6TJ4AZCAQXGKV6RKZ6TRSY73E5GR2U2C5XXNMY"; // AdminAccount
-const secretSupreme = "SC5LC3A7KZWSPNLQH334H3HBUKUPCXKOJZQACEQUUYQVVAHLZ7DHMLU6"; // Supremeccount
-const secretPlayer1 = "SDSGWOZWZRFRIF2HIYTNV3ZTQ3A7HYCEFA73H6A6DJXBNRS4LZQOOJOJ"; // Player1
-const secretPlayer2 = "SDH6L5FFIBYIRBLS253IA7PW4RBXPDDBWOUI2ZUEVRYBFVJCNMHTTCVR"; // Player2
-const secretSummiter = "SBBKDYLZTUFAHIE3PEFF2VQ7POHOYFLTJ3IFMZJQC5RGRHW6UGPUIOYF"; // SummiterAccount
-
-const sourceKeypairAdmin = Keypair.fromSecret(secret);
-const sourceKeypairSummiter = Keypair.fromSecret(secretSummiter);
-const sourceKeypairPlayer2 = Keypair.fromSecret(secretPlayer2);
-const sourceKeypairPlayer1 = Keypair.fromSecret(secretPlayer1);
-const sourceKeypairSupreme = Keypair.fromSecret(secretSupreme);
 
 
 // Configure the SDK to use the `stellar-rpc` instance of your choosing.
@@ -158,6 +143,25 @@ async function place_bet(address, id_bet, game_id, team, amount, setting, keypai
         bet,
     ], keypairUser);
 }
+async function AssestResult_supremCourt(address, gameid, desition, keypairUser) {
+    // fn AssestResult_supremCourt(user: address, gameid: i128, desition: AssessmentKey) -> bool
+
+    //fn assessResult(user: address, setting: i128, game_id: i128, desition: AssessmentKey)
+    /**#[contracttype]
+enum AssessmentKey {
+  approve(),
+  reject()
+} */
+    const user = nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" });
+    const gameid_sent = nativeToScVal(gameid, { type: "i128" });
+    const desition_sent = xdr.ScVal.scvVec([nativeToScVal(desition, { type: "symbol" })]);
+
+
+    // 5. Call the set_game function
+    await funtionExecution("AssestResult_supremCourt", [user,
+        gameid_sent, desition_sent
+    ], keypairUser);
+}
 async function asses_result(address, setting, desition, keypairUser) {
     // 1. mint some usdc to be  staked
     //fn assessResult(user: address, setting: i128, game_id: i128, desition: AssessmentKey)
@@ -181,9 +185,9 @@ async function claim(address, setting, claimType, keypairUser) {
     //fn claim(user: address, typeClaim: ClaimType, setting: i128)
     /**#[contracttype]
     enum ClaimType {
-    Summiter(),
-    Protocol(),
-    User()
+  Supreme(),
+  Protocol(),
+  User()
     } */
     const user = nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" });
     const claimType_sent = xdr.ScVal.scvVec([nativeToScVal(claimType, { type: "symbol" })]);
@@ -211,6 +215,62 @@ async function execute_distribution(setting, keypairUser) {
 
     // 5. Call the set_game function
     await funtionExecution("execute_distribution", [id_setting_sent], keypairUser);
+}
+async function setResult_supremCourt(address, description, game_id, team, keypairUser) {
+    //setResult_supremCourt(user: address, result: ResultGame) -> bool    //await mint_usdc(address, amount);
+    /*#[contracttype]
+struct ResultGame {
+  description: string,
+  distribution_executed: bool,
+  gameid: i128,
+  id: i128,
+  pause: bool,
+  result: BetKey
+  enum BetKey {
+  Team_local(),
+  Team_away(),
+  Draw(),
+  Cancel()
+}
+*/
+
+    console.log("starting sumit resul");
+    const result = xdr.ScVal.scvMap([
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("description"),
+            val: nativeToScVal(description, { type: "string" }),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("distribution_executed"),
+            val: nativeToScVal(false, { type: "bool" }),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("gameid"),
+            val: nativeToScVal(game_id, { type: "i128" }),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("id"),
+            val: nativeToScVal(1212n, { type: "i128" }),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("pause"),
+            val: nativeToScVal(false, { type: "bool" }),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("result"),
+            val: xdr.ScVal.scvVec([nativeToScVal(team, { type: "symbol" })]),
+        }),
+        new xdr.ScMapEntry({
+            key: xdr.ScVal.scvSymbol("setting"),
+            val: nativeToScVal(0, { type: "i128" }),
+        }),
+    ]);
+
+    // 5. Call the set_game function
+    await funtionExecution("setResult_supremCourt", [
+        nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
+        result,
+    ], keypairUser);
 }
 async function summit_result(address, description, game_id, team, keypairUser, setting) {
     // 1. mint some usdc to be  staked
@@ -469,6 +529,8 @@ module.exports = {
     sendTransaction,
     set_private_bet,
     execute_distribution,
-    claim_refund
+    claim_refund,
+    setResult_supremCourt,
+    AssestResult_supremCourt
 };
 

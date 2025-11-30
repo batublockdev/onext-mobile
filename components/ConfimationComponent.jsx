@@ -15,7 +15,7 @@ export default function ConfirmationMessage({ success, message, reason, onClose 
                 />
 
                 <Text style={styles.title}>
-                    {success ? "Success!" : "Something went wrong"}
+                    {success ? "Todo bien!" : "Algo salio mal"}
                 </Text>
 
                 {/* ✅ Show message in both success and error cases */}

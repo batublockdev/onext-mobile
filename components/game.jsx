@@ -4,7 +4,7 @@ import { Link } from 'expo-router';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { teamLogos } from "./teamLogos";
 
-const MatchesScreen = () => {
+const MatchesScreen = ({ onOpen }) => {
 
     const [matches, setMatches] = useState([]);
 
@@ -14,9 +14,8 @@ const MatchesScreen = () => {
     useEffect(() => {
         const fetchMatches = async () => {
             try {
-                const response = await fetch('http://192.168.1.8:8383/api/data');
+                const response = await fetch('http://192.168.1.2:8383/api/data');
                 const data = await response.json();
-                console.log(data);
                 setMatches(data);
             } catch (error) {
                 console.error('Error fetching matches:', error);
@@ -60,41 +59,34 @@ const MatchesScreen = () => {
     const renderItem = ({ item }) => (
 
 
-        <Link
-            href={{
-                pathname: '/MatchDetails',
-                params: { match: JSON.stringify(item) },
-            }}
-            asChild
-        >
-            <TouchableOpacity style={styles.card}>
-                {/* Left team */}
-                <View style={styles.teamSection}>
-                    <Image
-                        source={teamLogos[item.local_team_logo]}
 
-                        style={styles.logo}
-                    />
-                    <Text style={styles.teamName}>{limitText(item.local_team_name, 8)}</Text>
-                </View>
+        <TouchableOpacity style={styles.card} onPress={() => onOpen(item.match_id, JSON.stringify(item))}>
+            {/* Left team */}
+            <View style={styles.teamSection}>
+                <Image
+                    source={teamLogos[item.local_team_logo]}
 
-                {/* Middle time */}
-                <View style={styles.centerSection}>
-                    <Text style={styles.time}>{dateHour(item.start_time)}</Text>
-                    <Text style={styles.date}>{dateDate(item.start_time)}</Text>
-                </View>
+                    style={styles.logo}
+                />
+                <Text style={styles.teamName}>{limitText(item.local_team_name, 8)}</Text>
+            </View>
 
-                {/* Right team */}
-                <View style={styles.teamSectionRight}>
-                    <Image
-                        source={teamLogos[item.away_team_logo]}
-                        style={styles.logo}
-                    />
-                    <Text style={styles.teamName}>{limitText(item.away_team_name, 8)}</Text>
-                </View>
-            </TouchableOpacity>
+            {/* Middle time */}
+            <View style={styles.centerSection}>
+                <Text style={styles.time}>{dateHour(item.start_time)}</Text>
+                <Text style={styles.date}>{dateDate(item.start_time)}</Text>
+            </View>
 
-        </Link>
+            {/* Right team */}
+            <View style={styles.teamSectionRight}>
+                <Image
+                    source={teamLogos[item.away_team_logo]}
+                    style={styles.logo}
+                />
+                <Text style={styles.teamName}>{limitText(item.away_team_name, 8)}</Text>
+            </View>
+        </TouchableOpacity>
+
     );
 
     return (
@@ -109,56 +101,78 @@ const MatchesScreen = () => {
         />
     );
 };
+
 const styles = StyleSheet.create({
     card: {
         flexDirection: "row",
-        backgroundColor: "#fff",
+        backgroundColor: "#12171D",
         padding: 16,
-        borderRadius: 20,
+        borderRadius: 16,
         alignItems: "center",
         justifyContent: "space-between",
+
+        // sombra sutil estilo dark
         shadowColor: "#000",
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.25,
         shadowRadius: 8,
-        elevation: 5,
-        marginBottom: 10,
-        marginHorizontal: 8,
+        shadowOffset: { width: 0, height: 3 },
+        elevation: 4,
+
+        marginBottom: 12,
+        marginHorizontal: 10,
+
+        borderWidth: 1,
+        borderColor: "#1E252D",
     },
 
     teamSection: {
         alignItems: "center",
+        width: 70,
     },
+
     teamSectionRight: {
         alignItems: "center",
+        width: 70,
     },
 
     teamName: {
-        fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 6,
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#FFFFFF",
+        marginTop: 6,
+        textAlign: "center",
     },
 
     logo: {
-        width: 40,
-        height: 40,
+        width: 42,
+        height: 42,
         resizeMode: "contain",
     },
 
     centerSection: {
         alignItems: "center",
+        flex: 1,
     },
 
     time: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: "700",
-        color: "#ff6a00",
+        color: "#35D787",   // verde premium (mismo que status Win)
     },
 
     date: {
-        fontSize: 12,
-        color: "gray",
+        marginTop: 2,
+        fontSize: 13,
+        color: "#9CA3AF",
+        fontWeight: "500",
+    },
+
+    listContainer: {
+        paddingBottom: 20,
+        paddingHorizontal: 8,
     },
 });
+
 
 
 export default MatchesScreen;

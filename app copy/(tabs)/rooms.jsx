@@ -20,12 +20,13 @@ export default function Rooms() {
             text: "Perdida",
         },
 
+        // Neutral gray group
         Abierta: {
             backgroundColor: "#C8C8C8",
             text: "Abierta",
         },
         Cerrada: {
-            backgroundColor: "#8C8C8C",
+            backgroundColor: "#887575ff",
             text: "Cerrada",
         },
         Pendiente: {
@@ -36,6 +37,7 @@ export default function Rooms() {
             backgroundColor: "#C8C8C8",
             text: "Resultado",
         },
+
     };
     const getStatusData = (status) => {
         return statusStyles[status] || statusStyles.pending;
@@ -43,9 +45,11 @@ export default function Rooms() {
     async function getUsdToCop(usd) {
         const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
         const data = await res.json();
+        console.log("USD to COP rate:", data.rates.COP);
         const result = data.rates.COP * usd;
         const rounded = Math.round(usd * data.rates.COP);
 
+        console.log(`$${usd} USD is approximately ₱${rounded.toFixed(6)} COP`);
         return formatCOP(rounded.toFixed(6));
     }
     function formatCOP(value) {
@@ -68,12 +72,14 @@ export default function Rooms() {
     // ✅ Example: Fetch existing rooms
     useEffect(() => {
         fetchRooms();
+        console.log("User ID in Rooms:", userId);
     }, []);
 
     const fetchRooms = async () => {
         try {
             const res = await fetch(`http://192.168.1.2:8383/api/rooms?user_id=${userId}`);
             const data = await res.json();
+            console.log("Fetched rooms:", data);
             status(data);
         } catch (error) {
             console.error("Error fetching rooms:", error);
@@ -82,7 +88,7 @@ export default function Rooms() {
     const status = async (data) => {
         const now = new Date();
         for (let i = 0; i < data.length; i++) {
-            console.log(data[i]);
+            console.log(data[i].room_id);
             const startGame = new Date(data[i].start_time);
 
             const endTime = new Date(data[i].finish_time);
@@ -97,19 +103,18 @@ export default function Rooms() {
                     status = "Pendiente"
                 }
             }
-            if ((data[i].ready && data[i].result == data[i].user_bet) || (data[i].result && data[i].supreme_result == data[i].user_bet && data[i].supreme_distributed)) {
+            if (data[i].ready && data[i].result == data[i].user_bet) {
                 status = "Ganada"
             }
-            if ((data[i].ready && data[i].result != data[i].user_bet) || (data[i].result && data[i].supreme_result != data[i].user_bet && data[i].supreme_distributed)) {
+            if (data[i].ready && data[i].result != data[i].user_bet) {
                 status = "Perdida"
             }
 
-
-            if (startGame > now) {
-                status = "Abierta"
-            }
             if (!data[i].active && startGame < now) {
                 status = "Cerrada"
+            }
+            if (startGame > now) {
+                status = "Abierta"
             }
             if (data[i].user_bet == "Team_away") {
                 pick = data[i].away_team_name;
@@ -141,75 +146,59 @@ export default function Rooms() {
 
         <TouchableOpacity
             activeOpacity={0.85}
-            style={[
-                styles.card,
-                item.active && styles.activeCard
-            ]}
+            style={[styles.card, { backgroundColor: item.active ? "#E0F7FA" : "#F8F8F8" }]}
             onPress={() =>
                 router.push({
                     pathname: "/specificRoom",
-                    params: { room_id: item.room_id },
+                    params: {
+                        room_id: item.room_id,
+
+                    },
                 })
+
             }
+
         >
-            {/* TOP ROW */}
+            {/* League + Status + Date */}
             <View style={styles.topRow}>
-                {/* STATUS BADGE */}
+
+
+
                 <View style={styles.centeredBadge}>
-                    <View style={[
-                        styles.statusBadge,
-                        { backgroundColor: getStatusData(item.status).backgroundColor }
-                    ]}>
-                        <Text style={styles.statusText}>
-                            {getStatusData(item.status).text}
-                        </Text>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusData(item.status).backgroundColor }]}>
+                        <Text style={styles.statusText}>{getStatusData(item.status).text}</Text>
                     </View>
                 </View>
 
-                {/* DATE */}
-                <Text style={styles.date}>
-                    {dateDate(item.date)}
-                </Text>
+                {/* Date on top-right */}
+                <Text style={styles.date}>{dateDate(item.date)}</Text>
             </View>
 
-            {/* TEAMS */}
+            {/* Teams Row */}
             <View style={styles.teamsRow}>
                 <View style={styles.team}>
                     <Image source={teamLogos[item.local_team_logo]} style={styles.logo} />
-                    <Text style={styles.teamName} numberOfLines={1}>{item.team2.substring(0, 7)}</Text>
+                    <Text style={styles.teamName}>{item.team2.substring(0, 7)}</Text>
                 </View>
+
 
                 <View style={styles.team}>
                     <Image source={teamLogos[item.away_team_logo]} style={styles.logo} />
-                    <Text style={styles.teamName} numberOfLines={1}>{item.team1.substring(0, 7)}</Text>
+                    <Text style={styles.teamName}>{item.team1.substring(0, 7)}</Text>
                 </View>
             </View>
 
-            {/* PICK + PROFIT */}
+            {/* Pick + Profit */}
             <View style={styles.bottom}>
                 <Text style={styles.pick}>{item.pick}</Text>
 
-                <Text
-                    style={[
-                        styles.profit,
-                        item.status === "Ganada"
-                            ? styles.winProfit
-                            : item.status === "Perdida"
-                                ? styles.loseProfit
-                                : styles.okProfit
-                    ]}
-                >
-                    {item.status === "Ganada"
-                        ? `+${item.profit}`
-                        : item.status === "Perdida"
-                            ? `-${item.profit}`
-                            : `${item.profit}`}
+                <Text style={[styles.profit, item.status == "Ganada" ? styles.winProfit : item.status == "Perdida" ? styles.loseProfit : styles.okProfit,]}>
+                    {item.status == "Ganada" ? `+${item.profit}` : item.status == "Perdida" ? `-${item.profit} ` : ` ${item.profit} `}
                 </Text>
             </View>
+
         </TouchableOpacity>
     );
-
-
 
     return (
         <View style={styles.container}>
@@ -228,19 +217,12 @@ export default function Rooms() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#0A0F14",
-        paddingTop: 10,
-    },
-
     title: {
         fontSize: 22,
         fontWeight: "700",
         textAlign: "center",
-        marginBottom: 18,
+        marginBottom: 20,
         marginTop: 10,
-        color: "#FFFFFF",
     },
 
     list: {
@@ -248,20 +230,39 @@ const styles = StyleSheet.create({
     },
 
     card: {
-        backgroundColor: "#12171D",
-        padding: 18,
+        backgroundColor: "#fff",
+        padding: 20,              // more padding
         borderRadius: 16,
         marginBottom: 14,
-        borderWidth: 1,
-        borderColor: "#1E252D",
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 5,
     },
 
-    activeCard: {
-        backgroundColor: "#1A222C",
-        borderColor: "#2A323D",
+    topRow: {
+        flexDirection: "row",
+        justifyContent: "center",  // centered badge
+        alignItems: "center",
+        marginBottom: 12,
     },
 
-    /* TOP ROW */
+
+
+    statusText: {
+        color: "#fff",
+        fontWeight: "700",
+        fontSize: 14,
+    },
+
+
+
+    teamsRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 10,
+    },
     topRow: {
         marginBottom: 12,
         position: "relative",
@@ -271,19 +272,7 @@ const styles = StyleSheet.create({
 
     centeredBadge: {
         width: "100%",
-        alignItems: "center",
-    },
-
-    statusBadge: {
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: 12,
-    },
-
-    statusText: {
-        fontWeight: "700",
-        fontSize: 14,
-        color: "#000",
+        alignItems: "center",  // forces badge to center
     },
 
     date: {
@@ -292,39 +281,31 @@ const styles = StyleSheet.create({
         top: 0,
         fontSize: 13,
         fontWeight: "500",
-        color: "#9CA3AF",
+        color: "#555",
     },
 
-    /* TEAMS */
-    teamsRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 10,
-        paddingHorizontal: 4,
+    statusBadge: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 12,
     },
 
     team: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
+        gap: 8,
     },
 
     logo: {
-        width: 36,
-        height: 36,
-        resizeMode: "contain",
+        width: 32,
+        height: 32,
     },
 
     teamName: {
-        fontWeight: "700",
+        fontWeight: "600",
         fontSize: 15,
-        color: "#FFFFFF",
-        maxWidth: 95,
-        flexShrink: 1,
     },
 
-    /* BOTTOM ROW */
     bottom: {
         marginTop: 16,
         flexDirection: "row",
@@ -333,14 +314,11 @@ const styles = StyleSheet.create({
     },
 
     pick: {
-        backgroundColor: "#0A0F14",
+        backgroundColor: "#EFEFEF",
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 10,
         fontWeight: "600",
-        color: "#35D787",
-        borderWidth: 1,
-        borderColor: "#35D787",
     },
 
     profit: {
@@ -349,15 +327,13 @@ const styles = StyleSheet.create({
     },
 
     winProfit: {
-        color: "#35D787",
+        color: "#26B36C",
     },
 
     loseProfit: {
-        color: "#FF6A6A",
+        color: "#E34A4A",
     },
-
     okProfit: {
-        color: "#9CA3AF",
+        color: "#6b6b6bff",
     },
 });
-

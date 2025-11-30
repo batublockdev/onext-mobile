@@ -52,7 +52,6 @@ export default function Page() {
             <ScrollView
                 contentContainerStyle={styles.scrollContainer}
                 keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
             >
                 <Text style={styles.title}>Welcome Back</Text>
                 <Text style={styles.subtitle}>Sign in to continue</Text>
@@ -61,7 +60,7 @@ export default function Page() {
                     <TextInput
                         style={styles.input}
                         placeholder="Enter email"
-                        placeholderTextColor="#6B7280"
+                        placeholderTextColor="#9CA3AF"
                         autoCapitalize="none"
                         value={emailAddress}
                         onChangeText={setEmailAddress}
@@ -69,7 +68,7 @@ export default function Page() {
                     <TextInput
                         style={styles.input}
                         placeholder="Enter password"
-                        placeholderTextColor="#6B7280"
+                        placeholderTextColor="#9CA3AF"
                         secureTextEntry
                         value={password}
                         onChangeText={setPassword}
@@ -94,78 +93,58 @@ export default function Page() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#0D0D0D", // darker and cleaner
+        backgroundColor: "#111827", // solid dark background
     },
     scrollContainer: {
         flexGrow: 1,
         justifyContent: "center",
-        paddingHorizontal: 28,
-        paddingVertical: 10,
+        padding: 20,
     },
-
-    // --- Titles ---
     title: {
-        color: "#FFFFFF",
-        fontSize: 30,
-        fontWeight: "800",
-        marginBottom: 6,
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "bold",
+        marginBottom: 10,
         textAlign: "center",
-        letterSpacing: 0.5,
     },
     subtitle: {
-        color: "#6B7280",
-        fontSize: 15,
-        marginBottom: 32,
+        color: "#9CA3AF",
+        fontSize: 16,
+        marginBottom: 20,
         textAlign: "center",
     },
-
-    // --- Inputs ---
     inputContainer: {
         marginBottom: 20,
     },
     input: {
-        backgroundColor: "#161616",
+        backgroundColor: "#1F2937",
         color: "#fff",
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderRadius: 10,
-        marginBottom: 14,
-        borderWidth: 1,
-        borderColor: "#222",
-        fontSize: 15,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginBottom: 10,
     },
-
-    // --- Button ---
     button: {
-        backgroundColor: "#35D787", // neon green
-        paddingVertical: 15,
-        borderRadius: 10,
+        backgroundColor: "#3B82F6",
+        paddingVertical: 14,
+        borderRadius: 8,
         alignItems: "center",
-        marginTop: 10,
-        shadowColor: "#35D787",
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
     },
     buttonText: {
-        color: "#000",
-        fontSize: 17,
-        fontWeight: "700",
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "bold",
     },
-
-    // --- Sign up ---
     signupRow: {
         flexDirection: "row",
         justifyContent: "center",
-        marginTop: 25,
+        marginTop: 20,
     },
     signupText: {
-        color: "#6B7280",
-        fontSize: 14,
+        color: "#9CA3AF",
     },
     signupLink: {
-        color: "#35D787",
+        color: "#3B82F6",
         fontWeight: "bold",
-        fontSize: 14,
     },
 });

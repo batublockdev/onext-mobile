@@ -1,12 +1,15 @@
 import { useUser } from "@clerk/clerk-react";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSignOut } from "../(auth)/signout";
+import DepositComponent from '../../components/buttonSend';
 import MatchesScreen from '../../components/game';
 import MatchCard from '../../components/MatchCard';
+
+import { useRouter } from "expo-router";
+import PinVerification from "../../components/pin";
 import { useApp } from '../contextUser';
-import BetRoomModal from '../modalCreateCh';
+
 const HomeScreen = () => {
     const { ensureTrustline, startDeposit } = require('../../anchor/anchor');
     const { decryptOnly } = require('../../self-wallet/wallet');
@@ -19,10 +22,6 @@ const HomeScreen = () => {
     const [myMachesvar, setmyMachesvar] = useState([]);
     const [idcode, setidcode] = useState("N/A");
     const [position, setposition] = useState("0");
-
-    const [modalVisible, setModalVisible] = useState(false);
-    const [dataModalVisible, setdataModalVisible] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
 
 
     const router = useRouter();
@@ -41,10 +40,24 @@ const HomeScreen = () => {
     const TrustAsset = new StellarSdk.Asset("TRUST", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
     useEffect(() => {
         fetchRooms();
-        setmyMachesvar([]);
+        if (userx != null) {
+            if (!userx?.[0]?.id_app) {
+                setidcode("registro sin completar")
+            } else {
+                setidcode(userx[0].id_app)
+                setposition(userx[0].position)
+                if (userx[0].position == 1 || userx[0].position == 2) {
+
+                    supremeCheck()
+                }
+
+            }
+
+        }
 
     }, []);
     useEffect(() => {
+
         if (userx != null) {
             if (!userx?.[0]?.id_app) {
                 setidcode("registro sin completar")
@@ -89,10 +102,11 @@ const HomeScreen = () => {
     };
 
     const supremeCheck = async () => {
+        console.log("got here")
         try {
             const res = await fetch(`http://192.168.1.2:8383/api/selectsupreme`);
             const data = await res.json();
-            console.log("supreme data:", data);
+            console.log("supreme games need of a result", data);
             const result = data.data;
             for (let i = 0; i < result.length; i++) {
                 if (result[i].honest1 !== userx[0].pub_key && result[i].honest2 !== userx[0].pub_key) {
@@ -103,7 +117,7 @@ const HomeScreen = () => {
                         match_id: result[i].game_id,
                         result: result[i].result,
                         type: 1,
-                        league: "Supreme Court",
+                        league: "La Liga",
                         week: result[i].fecha,
                         team1: result[i].local_team_name,
                         team2: result[i].away_team_name,
@@ -115,7 +129,7 @@ const HomeScreen = () => {
                         adm: result[i].adm,
                         externalUser: result[i].externalUser,
                         result: result[i].result,
-                        gameState: "supreme"
+                        gameState: "final"
                     }
                     setmyMachesvar(prev => [...prev, a]);
                 } else if (result[i].distributed == true && ((result[i].honest1_claim == false && result[i].honest1 == userx[0].pub_key) || (result[i].honest2_claim == false && result[i].honest2 == userx[0].pub_key))) {
@@ -125,7 +139,7 @@ const HomeScreen = () => {
                         match_id: result[i].game_id,
                         result: result[i].result,
                         type: 1,
-                        league: "Supreme Court",
+                        league: "La Liga",
                         week: result[i].fecha,
                         team1: result[i].local_team_name,
                         team2: result[i].away_team_name,
@@ -138,7 +152,7 @@ const HomeScreen = () => {
                         externalUser: result[i].externalUser,
                         result: result[i].result,
                         distributed: true,
-                        gameState: "supreme"
+                        gameState: "final"
                     }
                     setmyMachesvar(prev => [...prev, a]);
                 }
@@ -195,12 +209,12 @@ const HomeScreen = () => {
                     howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                         .toFixed(6)
                         .replace(/\.?0+$/, "")} usd`,
-                    gameState: "cobrar"
+                    gameState: "final"
                 }
                 setmyMachesvar(prev => [...prev, a]);
 
             } else
-                if (now > limitStart && data[0].user_bet != "false" && !data[0].active && !data[0].user_claim) {
+                if (now > limitStart && data[0].user_bet != "false" && !data[0].active) {
                     console.log("no active game after starting");
                     const a = {
                         roomid: rooms[i].room_id,
@@ -217,7 +231,7 @@ const HomeScreen = () => {
                         howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                             .toFixed(6)
                             .replace(/\.?0+$/, "")} usd`,
-                        gameState: "cobrar"
+                        gameState: "final"
                     }
                     setmyMachesvar(prev => [...prev, a]);
                 } else
@@ -238,7 +252,7 @@ const HomeScreen = () => {
                             howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                                 .toFixed(6)
                                 .replace(/\.?0+$/, "")} usd`,
-                            gameState: "resultado"
+                            gameState: "final"
                         }
                         setmyMachesvar(prev => [...prev, a]);
                     } else
@@ -259,9 +273,9 @@ const HomeScreen = () => {
                                 howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                                     .toFixed(6)
                                     .replace(/\.?0+$/, "")} usd`,
-                                gameState: "upcoming"
+                                gameState: "live"
                             }
-                            setmyMachesvar(prev => [...prev, a]);
+                            // setmyMachesvar(prev => [...prev, a]);
                         }
 
 
@@ -330,78 +344,77 @@ const HomeScreen = () => {
         );
     }
 
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
 
-        // Simulate fetching new data
-        setTimeout(() => {
-            setRefreshing(false);
-        }, 1500);
-    }, []);
 
-    return (
-        <ScrollView style={styles.container} refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+    if (isLoading) {
+        return (<PinVerification
+            mode="verify"
+            message={loadingMessage}
+            onComplete={handleDeposit}
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push({
-                    pathname: "/summiter",
-                })} style={{ padding: 10, flexDirection: "row", alignItems: "center" }}>
+        />);
+    }
+    if (status == "sucess") {
+        return (
+            <DepositComponent depositUrl={depositUrl} />
 
-                    <View style={{ marginLeft: 10 }}>
+        )
+    }
+    else {
+        return (
+            <ScrollView style={styles.container}>
 
-                        <Text style={styles.username}>{user.firstName}</Text>
-                        <Text style={styles.userId}>ID: {idcode}</Text>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.push({
+                        pathname: "/summiter",
+                    })} style={{ padding: 10, flexDirection: "row", alignItems: "center" }}>
+
+                        <View style={{ marginLeft: 10 }}>
+
+                            <Text style={styles.username}>{user.firstName}</Text>
+                            <Text style={styles.userId}>ID: {idcode}</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.headerIcons}>
+                        <Text style={styles.icon}>{position}</Text>
                     </View>
-                </TouchableOpacity>
-
-                <View style={styles.headerIcons}>
-                    <Text style={styles.icon}>{position}</Text>
                 </View>
-            </View>
 
-            {/* Total Bets */}
-            <View style={styles.totalBox}>
-                <Text style={styles.totalLabel}>Saldo</Text>
-                <Text style={styles.totalValue}>{USDCBalance}</Text>
-                <Text style={styles.totalChange}>{TRUSTBalance + " Trust"}</Text>
-            </View>
+                {/* Total Bets */}
+                <View style={styles.totalBox}>
+                    <Text style={styles.totalLabel}>Saldo</Text>
+                    <Text style={styles.totalValue}>{USDCBalance}</Text>
+                    <Text style={styles.totalChange}>{TRUSTBalance + " Trust"}</Text>
+                </View>
 
 
-            {/* My Matches */}
-            <Section title="My Matches">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
-                    {myMachesvar.map((m) => (
-                        <MatchCard goToGameDetail={goGameResult} key={m.roomid} data={m} />
-                    ))}
-                </ScrollView>
+                {/* My Matches */}
+                <Section title="My Matches">
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+                        {myMachesvar.map((m) => (
+                            <MatchCard goToGameDetail={goGameResult} key={m.roomid} data={m} />
+                        ))}
+                    </ScrollView>
 
-            </Section>
+                </Section>
 
-            {/* Watchlist */}
-            <Section title="Watchlist">
-                <MatchesScreen onOpen={(id, data) => { console.log(id, data); setModalVisible(true), setdataModalVisible(data) }} />
-            </Section>
-            <BetRoomModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                game={dataModalVisible}
-            />
+                {/* Watchlist */}
+                <Section title="Watchlist">
+                    <MatchesScreen />
+                </Section>
 
-        </ScrollView >
+            </ScrollView >
 
-    );
+        );
 
+    }
 }
-
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 20,
-        backgroundColor: "#0A0F14",
+        backgroundColor: "#f6f8fa",
         padding: 20,
-        flex: 1,
     },
 
     /* Header */
@@ -410,13 +423,18 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
     },
+    avatar: {
+        width: 45,
+        height: 45,
+        borderRadius: 30,
+    },
     username: {
-        color: "#F5F5F5",
+        color: "#222",
         fontSize: 18,
         fontWeight: "700",
     },
     userId: {
-        color: "#C8CCD1",
+        color: "#777",
         fontSize: 12,
     },
     headerIcons: {
@@ -425,7 +443,7 @@ const styles = StyleSheet.create({
     icon: {
         fontSize: 22,
         marginLeft: 15,
-        color: "#28FF41",
+        color: "#444",
     },
 
     /* Total */
@@ -434,55 +452,94 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     totalLabel: {
-        color: "#C8CCD1",
+        color: "#777",
         fontSize: 14,
     },
     totalValue: {
-        color: "#F5F5F5",
+        color: "#000",
         fontSize: 34,
         fontWeight: "800",
         marginTop: 5,
     },
     totalChange: {
-        color: "#28FF41",
+        color: "#0bbf63",
         fontSize: 14,
         marginTop: 5,
+    },
+
+    /* Buttons */
+    buttonsRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 25,
+    },
+    lightBtn: {
+        backgroundColor: "#e9ecef",
+        width: "48%",
+        padding: 14,
+        borderRadius: 15,
+        alignItems: "center",
+    },
+    darkBtn: {
+        backgroundColor: "#000",
+        width: "48%",
+        padding: 14,
+        borderRadius: 15,
+        alignItems: "center",
+    },
+    lightBtnText: {
+        color: "#000",
+        fontWeight: "600",
+    },
+    profileCircle: {
+        width: 40,
+        height: 40,
+        backgroundColor: "#000",
+        borderRadius: 50,
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 10
+    },
+    darkBtnText: {
+        color: "#fff",
+        fontWeight: "600",
     },
 
     /* Section */
     sectionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginTop: 30,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#F5F5F5",
+        color: "#111",
     },
     sectionShow: {
-        color: "#28FF41",
+        color: "#0bbf63",
         fontWeight: "600",
     },
     sectionContent: {
         marginTop: 15,
     },
 
-    /* Cards (My Matches + Watchlist) */
+    /* Match Card */
     matchCard: {
-        backgroundColor: "#1A1F25",
+        backgroundColor: "#fff",
         padding: 18,
         borderRadius: 16,
         flexDirection: "row",
         justifyContent: "space-between",
         marginBottom: 15,
-        borderWidth: 1,
-        borderColor: "#1A1F25",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     matchTeam: {
         fontSize: 16,
         fontWeight: "600",
-        color: "#F5F5F5",
+        color: "#333",
     },
     matchCenter: {
         alignItems: "center",
@@ -490,39 +547,41 @@ const styles = StyleSheet.create({
     matchTime: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#28FF41",
+        color: "#0bbf63",
     },
     matchDate: {
-        color: "#C8CCD1",
+        color: "#999",
         fontSize: 12,
     },
 
+    /* Watchlist */
     watchCard: {
-        backgroundColor: "#1A1F25",
+        backgroundColor: "#fff",
         padding: 18,
         borderRadius: 16,
         marginBottom: 15,
-        borderWidth: 1,
-        borderColor: "#1A1F25",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     watchTeam: {
         fontSize: 17,
         fontWeight: "700",
-        color: "#F5F5F5",
+        color: "#333",
     },
     watchOdds: {
         fontSize: 20,
         marginTop: 5,
-        color: "#F5F5F5",
+        color: "#000",
         fontWeight: "700",
     },
     watchChange: {
         marginTop: 4,
-        color: "#28FF41",
+        color: "#0bbf63",
         fontWeight: "600",
     },
 });
-
 
 
 export default HomeScreen

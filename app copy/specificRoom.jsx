@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 
 
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ConfirmationMessage from "../components/ConfimationComponent";
 import ConfirmPrediction from "../components/ConfirmationPrediction";
 import { ERROR_MESSAGES } from "../components/error";
+import PinVerification from "../components/pin";
 import { teamLogos } from "../components/teamLogos";
 import { useApp } from "./contextUser";
-import LoadingOverlay from "../components/loadingCompnent";
+
 const {
     place_bet,
     claim,
@@ -21,7 +23,7 @@ const {
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function RoomDetail({ }) {
     const router = useRouter();
-    const [loadingx, setIsLoading] = useState(false);
+
     const { isSignedIn, user, isLoaded } = useUser();
     const [rooms, setRooms] = useState([]);
     const [canClaimRefund, setcanClaimRefund] = useState(false);
@@ -35,7 +37,6 @@ export default function RoomDetail({ }) {
     const [LastPlay, setLastPlay] = useState(null);
     const [collateral, setColateral] = useState(false);
 
-    const [msgLoading, setMsgLoading] = useState("Cargando");
 
 
 
@@ -54,7 +55,8 @@ export default function RoomDetail({ }) {
     const [reason, setReason] = useState("");
     const [msg, setMsg] = useState("");
 
-    const { userx, keypair } = useApp();
+    const { userx, setUserx } = useApp();
+    const [isLoading, setIsLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState("Verifying PIN...");
     const [done, setdone] = useState(false);
     const [selected, setSelected] = useState(null);
@@ -63,14 +65,13 @@ export default function RoomDetail({ }) {
         fetchRooms();
         console.log("User ID in Rooms:", user.id);
     }, []);
-    const handleClaim = async () => {
-        setIsLoading(true);
-        setStatus("loading");
+    const handleClaim = async (pin) => {
+        console.log("User claimed rewards!");
 
-        setMsgLoading("Reclamando ...")
         try {
 
             //fn execute_distribution(gameId: i128)
+            setLoadingMessage("Reclamando recompensa")
 
             const keypairUser = keypair; try {
                 await execute_distribution(params.room_id, keypairUser);
@@ -95,7 +96,7 @@ export default function RoomDetail({ }) {
 
             const amountUsd = (Number(usd) / 10_000_000).toFixed(2);
             const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
-            /** we got to show all the info */
+
             setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
 
             try {
@@ -119,8 +120,6 @@ export default function RoomDetail({ }) {
                 console.error('Error fetching user data:', error);
             }
             setStatus("success");
-            setMsgLoading("listo ...")
-
             setIsLoading(false);
             setMessage("Ya reclamaste esta recompensa 💰");
 
@@ -135,12 +134,9 @@ export default function RoomDetail({ }) {
         }
 
     };
-    const handleRefund = async () => {
-        setIsLoading(true);
-        setStatus("loading");
-        setMsgLoading("Reclamando ...")
+    const handleRefund = async (pin) => {
         try {
-            const keypairUser = keypair;
+            const keypairUser = keypair; setLoadingMessage("Reclamando reembolso")
 
             const value = await claim_refund(userx[0].pub_key, params.room_id, keypairUser);
             console.log("Resultado claim: ", value)
@@ -157,7 +153,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: claimAvailable, ready: activeBet }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: true, ready: true }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -187,26 +183,25 @@ export default function RoomDetail({ }) {
         }
 
     }
-    const handlesummit = async (answer) => {
-        setIsLoading(true);
-        setStatus("loading");
-
-        setMsgLoading("Enviando ...")
-
+    const handlesummit = async (pin) => {
+        /*Team_local(),
+          Team_away(),
+          Tie*/
         try {
-            const keypairUser = keypair; console.log("selecte: ", answer)
+            const keypairUser = keypair; console.log("selecte: ", selected)
             setLoadingMessage("Enviando resultado para su evaluacion")
 
-            await summit_result(keypairUser.publicKey(), "description", rooms.match_id, answer, keypairUser, params.room_id,);
+            await summit_result(keypairUser.publicKey(), "description", rooms.match_id, selected, keypairUser, params.room_id,);
             setStatus("success");
-            setIsLoading(false);
+            setLoadingMessage("Gueardando resultado ")
+
             try {
                 const response = await fetch('http://192.168.1.2:8383/api/updateroomuserresult', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: "approve", claim: false, resultx: answer, id_game: rooms.match_id }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: "approve", claim: false, resultx: selected, id_game: rooms.match_id }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -220,12 +215,13 @@ export default function RoomDetail({ }) {
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
-            setMatchResult(answer);
-            setStatus("success");
-            setIsLoading(false);
+            setMatchResult(selected);
+            //approve
             setUserDecision("approve");
             setResult(false);
         } catch (error) {
+
+            console.log("contraseñadd")
 
             const { reason, code } = parseContractError(error);
             const errorMsg =
@@ -245,20 +241,16 @@ export default function RoomDetail({ }) {
 
         }
     };
-    const handleDesition = async (answer) => {
-        setIsLoading(true);
-        setStatus("loading");
-
-        setMsgLoading("Enviando ...")
+    const handleDesition = async (pin) => {
         try {
             const keypairUser = keypair;
             //async function asses_result(address, setting, game_id, desition) {
             setLoadingMessage("Enviando opinion del resultado")
 
-            await asses_result(userx[0].pub_key, params.room_id, answer, keypairUser);
+            await asses_result(userx[0].pub_key, params.room_id, selected, keypairUser);
             setIsLoading(false);
             let ready = false;
-            if (lastAsses && !(answer == "reject" || reject)) {
+            if (lastAsses && !(selected == "reject" || reject)) {
                 ready = true;
                 setClaimAvailable(true)
             }
@@ -270,14 +262,14 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: answer, claim: false, active: true, ready: ready }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: selected, claim: false, active: true, ready: ready }), // send your user ID here
                 });
 
                 if (!response.ok) {
                     console.error('Server responded with error:', response.status);
                     return;
                 }
-                setUserDecision(answer)
+                setUserDecision(selected)
                 const data = await response.json();
                 console.log('User data saved successfully:', data);
 
@@ -287,11 +279,11 @@ export default function RoomDetail({ }) {
             }
             setStatus("success");
             setIsLoading(false);
-            if (answer == "reject" || reject) {
+            if (selected == "reject" || reject) {
                 setMessage("El resultado propuesto ha sido rechazado, este sera resuelto en breve")
 
             }
-            if (answer == "reject") {
+            if (selected == "reject") {
                 try {
                     const response = await fetch('http://192.168.1.2:8383/api/insertsupreme', {
                         method: 'POST', // must be POST to send body
@@ -305,7 +297,7 @@ export default function RoomDetail({ }) {
                         console.error('Server responded with error:', response.status);
                         return;
                     }
-                    setUserDecision(answer)
+                    setUserDecision(selected)
                     const data = await response.json();
                     console.log('User data saved successfully:', data);
 
@@ -351,14 +343,15 @@ export default function RoomDetail({ }) {
             } else {
                 setUserDecision(data[0].user_assest)
                 setClaimAvailable(data[0].ready);
-                if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
-                }
             }
-
+            if (data[0].user_claim == true) {
+                setMessage("Ya reclamaste esta recompensa 💰");
+            }
 
             setMatchResult(data[0].result)
             setactiveBet(data[0].active)
+            console.log(data[0].start_time);
+            console.log("Fetched rooms specific:", data[0]);
             let noPlayUsers = 0;
             let noAssessUsers = 0;
             let rejected = false;
@@ -387,31 +380,25 @@ export default function RoomDetail({ }) {
 
             const startGame = new Date(data[0].start_time);
             const now = new Date();
+            console.log("fecha", startGame.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
+            console.log("fecha2 ", now.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
 
             const endTime = new Date(data[0].finish_time);
             const limit = new Date(endTime.getTime() + 18000 * 1000);
-            const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
-
             const limitStart = new Date(endTime.getTime() + 600 * 1000);
 
             if (data[0].user_bet !== "false") {
                 setBet(true);
                 console.log("has jugado")
             }
-            if (now > limitSupreme && data[0].user_bet != "false" && data[0].active && !data[0].result) {
+            if (now > limit && data[0].user_bet != "false" && !data[0].result) {
                 setcanClaimRefund(true);
                 console.log("no result so claim refund");
-                if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
-                }
 
             }
             if (now > limitStart && data[0].user_bet != "false" && !data[0].active) {
                 setcanClaimRefund(true);
                 console.log("no active game after starting");
-                if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
-                }
             }
             if (now > endTime && data[0].user_bet != "false" && data[0].active && !data[0].result) {
                 //limit this t 5hours
@@ -477,16 +464,32 @@ export default function RoomDetail({ }) {
         }
         return { code: null, reason: "Unexpected error occurred." };
     }
+    const action = async (pin) => {
 
+        switch (pinSend) {
+            case "playx":
+                bet(pin);
+                break;
+            case "assest":
+                handleDesition(pin);
+                break;
+            case "claim":
+                handleClaim(pin);
+                break;
+            case "refund":
+                handleRefund(pin);
+                break;
+            case "result":
+                handlesummit(pin);
+                break;
 
-    const play = async () => {
-        setIsLoading(true);
-        setStatus("loading");
+        }
+        // do something
+    }
 
-        setMsgLoading("Enviando ...")
+    const bet = async (pin) => {
         try {
-            const team = selected;
-            console.log("Bet placed on:", team);
+            console.log("Bet placed on:", selected);
             console.log("rooms,", rooms.match_id)
             const keypairUser = keypair; const id_bet = Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -495,7 +498,7 @@ export default function RoomDetail({ }) {
 
             console.log(value)
             setLoadingMessage("Enviando prediccion a la red")
-            await place_bet(userx[0].pub_key, id_bet, rooms.match_id, team, value, params.room_id, keypairUser, collateral);
+            await place_bet(userx[0].pub_key, id_bet, rooms.match_id, selected, value, params.room_id, keypairUser, collateral);
             let active = false;
             if (LastPlay) {
                 active = true;
@@ -509,7 +512,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: team, claim: false, active: active, ready: false }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: selected, claim: false, active: active, ready: false }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -536,274 +539,296 @@ export default function RoomDetail({ }) {
             return;
         }
     };
-    const handlePredict = async (option) => {
+    const handleBet = async (option, send) => {
         setSelected(option);
-        if (option == "Team_local") {
-            setteamSelected(room.local_team_name);
-            setteamSelectedlogo(room.local_team_logo);
-        } else if (option == "Team_away") {
-            setteamSelected(room.away_team_name);
-            setteamSelectedlogo(room.away_team_logo);
+        if (send == "play") {
+            setreadytoSend(true);
+            if (option == "Team_local") {
+                setteamSelected(room.local_team_name);
+                setteamSelectedlogo(room.local_team_logo);
+            } else if (option == "Team_away") {
+                setteamSelected(room.away_team_name);
+                setteamSelectedlogo(room.away_team_logo);
+            }
+        } else {
+            setIsLoading(true);
+            setpinSend(send);
         }
-        setreadytoSend(true);
+
     };
 
-
-    return (<View style={styles.container}>
-        <LoadingOverlay
-            visible={loadingx}
-            status={status}
-            message={msgLoading}
-            onAutoClose={() => setIsLoading(false)}
-            onClose={() => setIsLoading(false)}
-        />
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push({
-            pathname: "/rooms",
-        })}>
-
-            <Ionicons name="arrow-back" size={22} color="#333" />
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View style={styles.header}>
-
-            <Text style={styles.roomTitle}>{room.title}</Text>
-            <Text
-                style={[
-                    styles.status,
-                    { color: activeBet ? "#28A745" : "#FF3B30" },
-                ]}
-            >
-                {activeBet ? "Activo" : "Esperando jugadores"}
-            </Text>
+    const renderUser = ({ item }) => (
+        <View style={styles.userCard}>
+            <Text style={styles.userEmoji}>👤</Text>
+            <Text style={styles.userName}>{item.firstName}</Text>
         </View>
+    );
+    if (isLoading) {
+        return (<PinVerification
+            mode="verify"
+            message={loadingMessage}
+            onComplete={action}
 
-        {/* Teams */}
-        <View style={styles.teamsContainer}>
-            <View style={styles.team}>
-                <Image
-                    source={teamLogos[room.local_team_logo]}
-                    style={styles.logo}
-                />
-                <Text style={styles.teamName}>{room.local_team_name}</Text>
+        />);
+    }
+
+    else {
+        return (<View style={styles.container}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.push({
+                pathname: "/rooms",
+            })}>
+                <Ionicons name="arrow-back" size={22} color="#333" />
+            </TouchableOpacity>
+            {/* Header */}
+            <View style={styles.header}>
+
+                <Text style={styles.roomTitle}>{room.title}</Text>
+                <Text
+                    style={[
+                        styles.status,
+                        { color: activeBet ? "#28A745" : "#FF3B30" },
+                    ]}
+                >
+                    {activeBet ? "Activo" : "Esperando jugadores"}
+                </Text>
             </View>
 
-            <Text style={styles.vs}>VS</Text>
+            {/* Teams */}
+            <View style={styles.teamsContainer}>
+                <View style={styles.team}>
+                    <Image
+                        source={teamLogos[room.local_team_logo]}
+                        style={styles.logo}
+                    />
+                    <Text style={styles.teamName}>{room.local_team_name}</Text>
+                </View>
 
-            <View style={styles.team}>
-                <Image
-                    source={teamLogos[room.away_team_logo]} style={styles.logo}
+                <Text style={styles.vs}>VS</Text>
 
-                />
-                <Text style={styles.teamName}>{room.away_team_name}</Text>
+                <View style={styles.team}>
+                    <Image
+                        source={teamLogos[room.away_team_logo]} style={styles.logo}
+
+                    />
+                    <Text style={styles.teamName}>{room.away_team_name}</Text>
+                </View>
             </View>
-        </View>
 
-        {/* Match info */}
-        <Text style={styles.time}>
-            {new Date(room.start_time).getUTCDate()} {" "}
-            {new Date(room.start_time).toLocaleString("en-US", { month: "short", timeZone: "UTC" })}
-        </Text>
-
-        <View style={styles.minAmountContainer}>
-            <Text style={styles.minAmountLabel}>En juego:</Text>
-            <Text style={styles.minAmountValue}>
-                {`${(parseFloat(rooms.min_amount) / 10_000_000)
-                    .toFixed(6)
-                    .replace(/\.?0+$/, "")} USD`}
+            {/* Match info */}
+            <Text style={styles.time}>
+                {new Date(room.start_time).getUTCDate()} {" "}
+                {new Date(room.start_time).toLocaleString("en-US", { month: "short", timeZone: "UTC" })}
             </Text>
-        </View>
 
-        <Text style={styles.betStatus}>
-            {betis ? result ? "¿Cual fue el equipo ganador? " : "Ya realizaste tu predicion ✅" : "Aún no has jugado ❌"}
-        </Text>
+            <View style={styles.minAmountContainer}>
+                <Text style={styles.minAmountLabel}>En juego:</Text>
+                <Text style={styles.minAmountValue}>
+                    {`${(parseFloat(rooms.min_amount) / 10_000_000)
+                        .toFixed(6)
+                        .replace(/\.?0+$/, "")} USD`}
+                </Text>
+            </View>
 
-        {/* Users list */}
-        <View style={styles.usersSection}>
-            <Text style={styles.sectionTitle}>Jugadores en la sala</Text>
-            <FlatList
-                data={room.users}
-                horizontal
-                keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                renderItem={({ item }) => (
-                    <View
-                        style={[
-                            styles.userCard,
-                            item.bet && item.bet !== "false" || (betis && item.username === user.firstName)
-                                ? styles.playedCard
-                                : styles.notPlayedCard,
-                        ]}
-                    >
-                        <Text
+            <Text style={styles.betStatus}>
+                {betis ? result ? "¿Cual fue el equipo ganador? " : "Ya realizaste tu predicion ✅" : "Aún no has jugado ❌"}
+            </Text>
+
+            {/* Users list */}
+            <View style={styles.usersSection}>
+                <Text style={styles.sectionTitle}>Jugadores en la sala</Text>
+                <FlatList
+                    data={room.users}
+                    horizontal
+                    keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+                    renderItem={({ item }) => (
+                        <View
                             style={[
-                                styles.userName,
+                                styles.userCard,
                                 item.bet && item.bet !== "false" || (betis && item.username === user.firstName)
-                                    ? styles.playedText
-                                    : styles.notPlayedText,
+                                    ? styles.playedCard
+                                    : styles.notPlayedCard,
                             ]}
                         >
-                            {item.username === user.firstName ? "Yo" : item.username || item.user_id || "User"}
-                        </Text>
-                    </View>
-                )}
-                showsHorizontalScrollIndicator={false}
-            />
-        </View>
-
-        {/* Betting options or result status */}
-        <View style={styles.optionsContainer}>
-            {/* CASE 1: User hasn’t bet yet and match still active */}
-            {!betis && !message && (
-                <>
-                    {["Team_local", "Tie", "Team_away"].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={styles.optionButton}
-                            onPress={() => handlePredict(option)}
-                        >
-                            <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
-                                {option === "Team_local"
-                                    ? room.local_team_name
-                                    : option === "Tie"
-                                        ? "Empate"
-                                        : room.away_team_name}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </>
-            )}
-            {result && (
-                <>
-                    {["Team_local", "Tie", "Team_away"].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={styles.optionButton}
-                            onPress={() => handlesummit(option)}
-                        >
-                            <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
-                                {option === "Team_local"
-                                    ? room.local_team_name
-                                    : option === "Tie"
-                                        ? "Empate"
-                                        : room.away_team_name}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </>
-            )}
-            {message && (
-                <Text style={{ color: "#007AFF", marginTop: 10, fontWeight: "600" }}>
-                    {message}
-                </Text>
-            )}
-            {canClaimRefund && !message && (
-                <TouchableOpacity
-                    style={[styles.decisionButton, { backgroundColor: "#FFA500" }]}
-                    onPress={() => handleRefund()}
-                >
-                    <Text style={styles.decisionText}>Reclamar Reembolso 💸</Text>
-                </TouchableOpacity>
-            )}
-
-            {/* CASE 2: User already bet but no result yet */}
-            {betis && !matchResult && !canClaimRefund && !message && !result && (
-                <Text style={styles.waitingMessage}>
-                    Partido sin terminar ...
-                </Text>
-            )}
-
-            {/* CASE 3: Result received — show result and buttons */}
-            {matchResult && !message && (
-                <View style={styles.resultContainer}>
-                    <Text style={styles.resultText}>
-                        🏁 Resultado:{" "}
-                        {matchResult === "Team_local"
-                            ? room.local_team_name
-                            : matchResult === "Team_away"
-                                ? room.away_team_name
-                                : "Empate"}
-                    </Text>
-
-                    {/* Accept / Reject buttons */}
-                    {!userDecision && !claimAvailable && !message && (
-                        <View style={styles.decisionButtons}>
-                            <TouchableOpacity
-                                style={[styles.decisionButton, { backgroundColor: "#28A745" }]}
-                                onPress={() => handleDesition("approve")}
+                            <Text
+                                style={[
+                                    styles.userName,
+                                    item.bet && item.bet !== "false" || (betis && item.username === user.firstName)
+                                        ? styles.playedText
+                                        : styles.notPlayedText,
+                                ]}
                             >
-                                <Text style={styles.decisionText}>Aceptar ✅</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.decisionButton, { backgroundColor: "#FF3B30" }]}
-                                onPress={() => handleDesition("reject")}
-                            >
-                                <Text style={styles.decisionText}>Rechazar ❌</Text>
-                            </TouchableOpacity>
+                                {item.username === user.firstName ? "Yo" : item.username || item.user_id || "User"}
+                            </Text>
                         </View>
                     )}
-
-                    {/* Show user's decision */}
-                    {userDecision && !claimAvailable && (
-                        <Text style={styles.userDecision}>
-                            Has {userDecision === "approve" ? "aceptado" : "rechazado"} el resultado.
-                        </Text>
-                    )}
-
-                    {/* Claim button */}
-                    {claimAvailable && !message && (
-                        <TouchableOpacity
-                            style={[styles.decisionButton, { backgroundColor: "#007AFF" }]}
-                            onPress={() => handleClaim()}
-                        >
-                            <Text style={styles.decisionText}>Reclamar Recompensa 💰</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            )}
-        </View>
-
-
-        {
-            readytoSend && (
-                <ConfirmPrediction
-                    amount={rooms.min_amount}
-                    prediction={selected}
-                    teamName={teamSelected}
-                    teamLogo={teamSelectedlogo}
-                    onConfirm={(data) => {
-                        // this runs in your previous screen
-                        console.log("CONFIRMED DATA →", data);
-                        if (data.type == "usd") {
-
-                            setColateral(true);
-                        } else {
-                            setColateral(false);
-
-                        }
-                        play(data.prediction);
-                        setreadytoSend(false);
-
-                    }}
-                    onBack={() => {
-                        // go back
-                        setreadytoSend(false);
-                    }}
+                    showsHorizontalScrollIndicator={false}
                 />
-            )
-        }
-    </View>)
+            </View>
 
+            {/* Betting options or result status */}
+            <View style={styles.optionsContainer}>
+                {/* CASE 1: User hasn’t bet yet and match still active */}
+                {!betis && !message && (
+                    <>
+                        {["Team_local", "Tie", "Team_away"].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={styles.optionButton}
+                                onPress={() => handleBet(option, "play")}
+                            >
+                                <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
+                                    {option === "Team_local"
+                                        ? room.local_team_name
+                                        : option === "Tie"
+                                            ? "Empate"
+                                            : room.away_team_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+                {result && (
+                    <>
+                        {["Team_local", "Tie", "Team_away"].map((option) => (
+                            <TouchableOpacity
+                                key={option}
+                                style={styles.optionButton}
+                                onPress={() => handleBet(option, "result")}
+                            >
+                                <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
+                                    {option === "Team_local"
+                                        ? room.local_team_name
+                                        : option === "Tie"
+                                            ? "Empate"
+                                            : room.away_team_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+                {message && (
+                    <Text style={{ color: "#007AFF", marginTop: 10, fontWeight: "600" }}>
+                        {message}
+                    </Text>
+                )}
+                {canClaimRefund && !message && (
+                    <TouchableOpacity
+                        style={[styles.decisionButton, { backgroundColor: "#FFA500" }]}
+                        onPress={() => handleBet("x", "refund")}
+                    >
+                        <Text style={styles.decisionText}>Reclamar Reembolso 💸</Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* CASE 2: User already bet but no result yet */}
+                {betis && !matchResult && !canClaimRefund && !message && !result && (
+                    <Text style={styles.waitingMessage}>
+                        Partido sin terminar ...
+                    </Text>
+                )}
+
+                {/* CASE 3: Result received — show result and buttons */}
+                {matchResult && !message && (
+                    <View style={styles.resultContainer}>
+                        <Text style={styles.resultText}>
+                            🏁 Resultado:{" "}
+                            {matchResult === "Team_local"
+                                ? room.local_team_name
+                                : matchResult === "Team_away"
+                                    ? room.away_team_name
+                                    : "Empate"}
+                        </Text>
+
+                        {/* Accept / Reject buttons */}
+                        {!userDecision && !claimAvailable && !message && (
+                            <View style={styles.decisionButtons}>
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#28A745" }]}
+                                    onPress={() => handleBet("approve", "assest")}
+                                >
+                                    <Text style={styles.decisionText}>Aceptar ✅</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#FF3B30" }]}
+                                    onPress={() => handleBet("reject", "assest")}
+                                >
+                                    <Text style={styles.decisionText}>Rechazar ❌</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Show user's decision */}
+                        {userDecision && !claimAvailable && (
+                            <Text style={styles.userDecision}>
+                                Has {userDecision === "approve" ? "aceptado" : "rechazado"} el resultado.
+                            </Text>
+                        )}
+
+                        {/* Claim button */}
+                        {claimAvailable && !message && (
+                            <TouchableOpacity
+                                style={[styles.decisionButton, { backgroundColor: "#007AFF" }]}
+                                onPress={() => handleBet("x", "claim")}
+                            >
+                                <Text style={styles.decisionText}>Reclamar Recompensa 💰</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+            </View>
+
+            {
+                status && (
+                    <ConfirmationMessage
+                        success={status === "success"}
+                        message={msg}
+                        reason={reason}
+                        onClose={() => setStatus(null)}
+                    />
+                )
+            }
+            {
+                readytoSend && (
+                    <ConfirmPrediction
+                        amount={rooms.min_amount}
+                        prediction={selected}
+                        teamName={teamSelected}
+                        teamLogo={teamSelectedlogo}
+                        onConfirm={(data) => {
+                            // this runs in your previous screen
+                            console.log("CONFIRMED DATA →", data);
+                            if (data.type == "usd") {
+
+                                setColateral(true);
+                            } else {
+                                setColateral(false);
+
+                            }
+                            handleBet(data.prediction, "playx");
+                            setreadytoSend(false);
+
+                        }}
+                        onBack={() => {
+                            // go back
+                            setreadytoSend(false);
+                        }}
+                    />
+                )
+            }
+        </View>)
+    }
 }
+
 
 
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#0D0D0D",
+        backgroundColor: "#F9FAFB",
         padding: 16,
-        paddingTop: 60,
+        paddingTop: 60, // space for back button
     },
 
     // 🔙 Back Button
@@ -811,12 +836,14 @@ const styles = StyleSheet.create({
         position: "absolute",
         top: 20,
         left: 16,
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#fff",
         borderRadius: 50,
         padding: 8,
-        borderWidth: 1,
-        borderColor: "#2D2D2D",
-        elevation: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
         zIndex: 20,
     },
 
@@ -828,14 +855,13 @@ const styles = StyleSheet.create({
     roomTitle: {
         fontSize: 22,
         fontWeight: "700",
-        color: "#E9F5EC",
+        color: "#222",
         marginBottom: 6,
         textAlign: "center",
     },
     status: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#4DA6FF",
     },
 
     // ⚽ Teams Section
@@ -848,7 +874,7 @@ const styles = StyleSheet.create({
     team: {
         flex: 1,
         alignItems: "center",
-        maxWidth: 120,
+        maxWidth: 120, // keeps long names from breaking layout
     },
     logo: {
         width: 70,
@@ -859,26 +885,26 @@ const styles = StyleSheet.create({
     teamName: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#E9F5EC",
+        color: "#333",
         textAlign: "center",
     },
     vs: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#9CA3AF",
+        color: "#999",
         marginHorizontal: 10,
     },
 
     // 🕒 Match Info
     time: {
         fontSize: 13,
-        color: "#9CA3AF",
+        color: "#555",
         textAlign: "center",
         marginVertical: 8,
     },
     betStatus: {
         fontSize: 14,
-        color: "#4DA6FF",
+        color: "#007AFF",
         textAlign: "center",
         fontWeight: "600",
         marginBottom: 12,
@@ -891,7 +917,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#E9F5EC",
+        color: "#333",
         marginBottom: 10,
     },
     userCard: {
@@ -903,27 +929,21 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     playedCard: {
-        backgroundColor: "#003B25",
-        borderWidth: 1,
-        borderColor: "#00E676",
+        backgroundColor: "#D4EDDA",
     },
     notPlayedCard: {
-        backgroundColor: "#3A0000",
-        borderWidth: 1,
-        borderColor: "#FF5252",
+        backgroundColor: "#F8D7DA",
     },
     userName: {
         fontSize: 13,
         fontWeight: "600",
-        color: "#E9F5EC",
     },
     playedText: {
-        color: "#00E676",
+        color: "#155724",
     },
     notPlayedText: {
-        color: "#FF5252",
+        color: "#721C24",
     },
-
     minAmountContainer: {
         marginTop: 8,
         marginBottom: 8,
@@ -931,39 +951,44 @@ const styles = StyleSheet.create({
     },
     minAmountLabel: {
         fontSize: 13,
-        color: "#9CA3AF",
+        color: "#6B7280", // soft gray
+        fontWeight: "400",
     },
     minAmountValue: {
         fontSize: 15,
-        color: "#4DA6FF",
-        fontWeight: "600",
+        color: "#2563EB", // subtle blue accent
+        fontWeight: "500",
         marginTop: 2,
     },
-
-    // 🎯 Options
+    // 🎯 Options / Betting Section
     optionsContainer: {
         marginTop: 10,
         alignItems: "center",
     },
     optionButton: {
-        backgroundColor: "#1A1A1A",
+        backgroundColor: "#fff",
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#2D2D2D",
+        borderColor: "#E0E0E0",
         paddingVertical: 12,
         paddingHorizontal: 14,
         marginVertical: 8,
         width: "90%",
         alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
         elevation: 2,
     },
     optionText: {
         fontSize: 15,
         fontWeight: "600",
-        color: "#E9F5EC",
+        color: "#333",
+        textAlign: "center",
     },
 
-    // RESULT / DECISION
+    // ✅ Decision / Results Section
     resultContainer: {
         marginTop: 16,
         alignItems: "center",
@@ -971,17 +996,15 @@ const styles = StyleSheet.create({
     resultText: {
         fontSize: 15,
         fontWeight: "700",
-        color: "#E9F5EC",
+        color: "#333",
         marginBottom: 10,
     },
-
     decisionButtons: {
         flexDirection: "row",
         justifyContent: "space-between",
         width: "90%",
         marginTop: 10,
     },
-
     decisionButton: {
         paddingVertical: 12,
         paddingHorizontal: 20,
@@ -989,27 +1012,30 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginVertical: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
         elevation: 2,
     },
+
     decisionText: {
-        color: "#FFF",
+        color: "#ffffff", // make text white for good contrast
         fontWeight: "600",
         fontSize: 16,
         textAlign: "center",
     },
-
     waitingMessage: {
         fontSize: 14,
-        color: "#9CA3AF",
+        color: "#888",
         marginTop: 10,
         textAlign: "center",
     },
     userDecision: {
         marginTop: 10,
         fontSize: 14,
-        color: "#4DA6FF",
+        color: "#007AFF",
         fontWeight: "600",
         textAlign: "center",
     },
 });
-

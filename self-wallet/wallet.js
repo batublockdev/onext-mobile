@@ -3,7 +3,7 @@ import { generateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import { Buffer } from 'buffer';
 import * as Crypto from "expo-crypto";
-import { Keypair } from 'stellar-sdk';
+import { Keypair, StrKey } from 'stellar-sdk';
 import nacl from 'tweetnacl';
 global.Buffer = Buffer;
 const {
@@ -46,7 +46,11 @@ export async function createWallet() {
 
     return { mnemonic, kp, raw32 };
 }
-
+// ---------- 1. import wallet ----------
+export async function importWallet(pvkey) {
+    const kp = Keypair.fromSecret(pvkey);
+    return { kp };
+}
 
 // ---------- 2. Encrypt raw seed ----------
 export function encryptWithPassword(raw32, password) {
@@ -63,6 +67,66 @@ export function encryptWithPassword(raw32, password) {
     };
 }
 
+/**
+ * Try multiple ways to extract a 32-byte raw Ed25519 seed from a Keypair.
+ * Returns a Uint8Array(32) on success, throws on failure.
+ */
+export function extractRawSeedFromKeypair(kp) {
+    // 1) Keypair has method rawSecretKey()
+    if (typeof kp.rawSecretKey === "function") {
+        const r = kp.rawSecretKey();
+        if (r && r.length >= 32) return Uint8Array.from(r).slice(0, 32);
+    }
+
+    // 2) Keypair has property rawSecretKey (some SDK variants)
+    if (kp.rawSecretKey && (kp.rawSecretKey.length >= 32)) {
+        return Uint8Array.from(kp.rawSecretKey).slice(0, 32);
+    }
+
+    // 3) Keypair stores _secretKey (usually 64 bytes: seed + pubkey)
+    if (kp._secretKey && (kp._secretKey.length >= 32)) {
+        // ensure it's a Uint8Array
+        const arr = kp._secretKey instanceof Uint8Array
+            ? kp._secretKey
+            : Uint8Array.from(kp._secretKey);
+        return arr.subarray(0, 32);
+    }
+
+    // 4) As a last resort, if we have a Stellar secret string, decode it
+    try {
+        const maybeSecret = typeof kp.secret === "function" ? kp.secret() : kp.secret;
+        if (maybeSecret && typeof maybeSecret === "string" && maybeSecret.startsWith("S")) {
+            // decode to raw seed bytes using StrKey
+            const raw = StrKey.decodeEd25519SecretSeed(maybeSecret); // returns Buffer/Uint8Array
+            return Uint8Array.from(raw).slice(0, 32);
+        }
+    } catch (e) {
+        // fallthrough to error
+    }
+
+    throw new Error("Unable to extract 32-byte raw seed from Keypair (unsupported Keypair shape).");
+}
+
+/**
+ * If you start with a Stellar secret string "S...", use this to get a raw 32-byte seed:
+ */
+export function rawSeedFromSecretString(secretStr) {
+    // create keypair and extract
+    const kp = Keypair.fromSecret(secretStr);
+    return extractRawSeedFromKeypair(kp);
+}
+
+/**
+ * Debug helper: log types/lengths (useful before encrypting)
+ */
+export function debugKeypair(kp) {
+    console.log(">>> debugKeypair start");
+    console.log("kp.secret (if available):", typeof kp.secret === "function" ? kp.secret() : kp.secret);
+    console.log("kp.rawSecretKey (prop):", kp.rawSecretKey);
+    console.log("kp._secretKey (prop):", kp._secretKey && kp._secretKey.length);
+    console.log("kp.rawSecretKey (func):", typeof kp.rawSecretKey === "function");
+    console.log(">>> debugKeypair end");
+}
 // ---------- 3. Decrypt ----------
 export function decryptWithPassword(keystore, password) {
     const key = nacl.hash(Buffer.from(password)).slice(0, 32);
@@ -89,6 +153,25 @@ export async function execution(password) {
     const id_app = await shortIdFromPubKey(recoveredKp.publicKey());
     return {
         mnemonic,
+        publicKey: recoveredKp.publicKey(),
+        keystore,
+        id_app,
+        secrect: recoveredKp.secret(),
+    };
+}
+// ---------- 4. Demo ----------
+export async function executionImport(secret, password) {
+    const { kp } = await importWallet(secret);
+    console.log('Public:', kp.publicKey());
+    const raw32 = extractRawSeedFromKeypair(kp);
+    const keystore = encryptWithPassword(raw32, password);
+    console.log('Encrypted keystore:', JSON.stringify(keystore, null, 2));
+
+    // Later: decrypt
+    const recoveredRaw = decryptWithPassword(keystore, password);
+    const recoveredKp = Keypair.fromRawEd25519Seed(recoveredRaw);
+    const id_app = await shortIdFromPubKey(recoveredKp.publicKey());
+    return {
         publicKey: recoveredKp.publicKey(),
         keystore,
         id_app,
