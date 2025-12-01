@@ -40,7 +40,7 @@ const TabsLayout = () => {
                 const data = await response.json();
                 console.log('Fetched user data:', data);
                 setUserx(data); // Update context with new user data
-                handleClick();
+                handleClick(data);
 
                 if (!data || (Array.isArray(data) && data.length === 0)) {
                     console.log('No user data found');
@@ -54,10 +54,18 @@ const TabsLayout = () => {
 
         fetchUser();
     }, []);
-    const handleClick = () => {
-        if (!keypair) {
+    const handleClick = (userloading) => {
 
-            setisLoading(true);
+        if (!keypair) {
+            if (!userloading || userloading !== null) {
+                console.log("Userx data available:", userloading);
+
+                if (!userloading[0]?.encrypted_data) {
+                    console.log("No encrypted data found for user.");
+                    return;
+                }
+                setisLoading(true);
+            }
         }
     }
 

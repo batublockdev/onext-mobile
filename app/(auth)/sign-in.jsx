@@ -1,20 +1,33 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import React from 'react';
+import useState from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Page() {
     const { signIn, setActive, isLoaded } = useSignIn()
     const router = useRouter()
+    const [emailError, setEmailError] = React.useState(null);
 
+    const [passwordError, setPasswordError] = React.useState(null);
+    const [globalError, setGlobalError] = React.useState(null);
     const [emailAddress, setEmailAddress] = React.useState('')
     const [password, setPassword] = React.useState('')
 
     // Handle the submission of the sign-in form
     const onSignInPress = async () => {
+        setEmailError(null);
+        setPasswordError(null);
+        setGlobalError(null);
         if (!isLoaded) return
-        if (!emailAddress || !password) {
-            Alert.alert('Please fill in all fields')
+        if (!emailAddress) {
+            setEmailError("Email is required.");
+
+            return
+        }
+        if (!password) {
+            setPasswordError("Password is required.");
+
             return
         }
 
@@ -34,13 +47,11 @@ export default function Page() {
                 // If the status isn't complete, check why. User might need to
                 // complete further steps.
                 Alert.alert("Sign in failed. Please try again.")
-                console.error(JSON.stringify(signInAttempt, null, 2))
             }
         } catch (err) {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
-            Alert.alert("Sign in failed. Please try again.")
-            console.error(JSON.stringify(err, null, 2))
+            setGlobalError("Invalid email or password.");
         }
     }
 
@@ -57,6 +68,13 @@ export default function Page() {
                 <Text style={styles.title}>Welcome Back</Text>
                 <Text style={styles.subtitle}>Sign in to continue</Text>
 
+                {/* Global Error Box */}
+                {globalError && (
+                    <View style={styles.errorBox}>
+                        <Text style={styles.errorBoxText}>{globalError}</Text>
+                    </View>
+                )}
+
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={styles.input}
@@ -64,16 +82,27 @@ export default function Page() {
                         placeholderTextColor="#6B7280"
                         autoCapitalize="none"
                         value={emailAddress}
-                        onChangeText={setEmailAddress}
+                        onChangeText={(text) => {
+                            setEmailAddress(text);
+                            setEmailError(null);
+                            setGlobalError(null);
+                        }}
                     />
+                    {emailError && <Text style={styles.errorText}>{emailError}</Text>}
+
                     <TextInput
                         style={styles.input}
                         placeholder="Enter password"
                         placeholderTextColor="#6B7280"
                         secureTextEntry
                         value={password}
-                        onChangeText={setPassword}
+                        onChangeText={(text) => {
+                            setPassword(text);
+                            setPasswordError(null);
+                            setGlobalError(null);
+                        }}
                     />
+                    {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
                 </View>
 
                 <TouchableOpacity style={styles.button} onPress={onSignInPress}>
@@ -95,6 +124,28 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#0D0D0D", // darker and cleaner
+    },
+    errorText: {
+        color: "#EF4444",
+        fontSize: 14,
+        marginBottom: 10,
+        marginLeft: 4,
+    },
+
+    errorBox: {
+        backgroundColor: "rgba(239, 68, 68, 0.15)",
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "rgba(239,68,68,0.4)",
+        marginBottom: 20,
+    },
+
+    errorBoxText: {
+        color: "#FCA5A5",
+        fontSize: 15,
+        textAlign: "center",
+        fontWeight: "600",
     },
     scrollContainer: {
         flexGrow: 1,

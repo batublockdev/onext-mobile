@@ -36,6 +36,8 @@ export default function BetRoomModal({ visible, onClose, game }) {
     const [loadingx, setLoadingx] = useState(false);
     const [msgLoading, setMsgLoading] = useState("Cargando");
     const parsedMatch = JSON.parse(game);
+    const [friendCodeError, setFriendCodeError] = useState(null);
+
     console.log("Parsed Match in Modal:", parsedMatch);
     const [amount, setAmount] = useState(0);
     function cleanNumber(value) {
@@ -44,8 +46,12 @@ export default function BetRoomModal({ visible, onClose, game }) {
         );
     }
     const handleAddFriend = async () => {
-        if (!friendCode.trim()) return;
-        setFriendCode("...");
+        if (!friendCode) {
+            setFriendCodeError("Friend code is required");
+            return;
+        }
+
+        setFriendCodeError(null);
         const newUser = {
             id: Date.now().toString(),
             name: `User ${users.length + 1}`,
@@ -74,16 +80,23 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
             if (!data || (Array.isArray(data) && data.length === 0)) {
                 console.log('No user data found');
-                setFriendCode("No encontrado");
+                setFriendCodeError("No se encontro");
 
             } else {
-                newUser.name = data[0].username;
-                newUser.id = data[0].user_id;
-                newUser.code = data[0].id_app;
-                setUsers((prev) => [...prev, newUser]);
-                setUsersPubk((prev) => [...prev, data[0].pub_key]);
-                setFriends([...friends, { id: Date.now().toString(), name: data[0].username }]);
-                setFriendCode("");
+                if (data[0].pub_key == userx[0].pub_key) {
+                    setFriendCodeError("Usa un codico dintisto al tuyo");
+                    return
+
+                } else {
+
+                    newUser.name = data[0].username;
+                    newUser.id = data[0].user_id;
+                    newUser.code = data[0].id_app;
+                    setUsers((prev) => [...prev, newUser]);
+                    setUsersPubk((prev) => [...prev, data[0].pub_key]);
+                    setFriends([...friends, { id: Date.now().toString(), name: data[0].username }]);
+                    setFriendCode("");
+                }
             }
 
         } catch (error) {
@@ -341,16 +354,26 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     <Text style={styles.label}>Friend Code</Text>
                     <View style={styles.row}>
                         <TextInput
-                            style={styles.input2}
+                            style={[
+                                styles.input2,
+                                friendCodeError && styles.inputError
+                            ]}
                             value={friendCode}
                             placeholder="Enter friend code"
                             placeholderTextColor="#999"
-                            onChangeText={setFriendCode}
+                            onChangeText={(value) => {
+                                setFriendCode(value);
+                                setFriendCodeError(null); // remove error while typing
+                            }}
                         />
                         <TouchableOpacity style={styles.addBtn} onPress={handleAddFriend}>
                             <Text style={styles.addBtnTxt}>Add</Text>
                         </TouchableOpacity>
                     </View>
+
+                    {friendCodeError && (
+                        <Text style={styles.errorText}>{friendCodeError}</Text>
+                    )}
 
                     {/* Friends list */}
                     <Text style={styles.label}>Friends Added</Text>
@@ -396,8 +419,15 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     />
 
                     {/* Submit button */}
-                    <TouchableOpacity style={styles.createBtn} onPress={handleCreateRoom}>
-                        <Text style={styles.createBtnTxt}>Create  Room</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.createBtn,
+                            (friends.length == 0 || !minBet || !keypair) && styles.createBtnDisabled
+                        ]}
+                        onPress={handleCreateRoom}
+                        disabled={(friends.length == 0 || !minBet || !keypair)}
+                    >
+                        <Text style={styles.createBtnTxt}>Crear salon</Text>
                     </TouchableOpacity>
 
                 </View>
@@ -464,7 +494,10 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         fontWeight: "600",
     },
-
+    createBtnDisabled: {
+        backgroundColor: "#474747ff",  // dark and clean
+        opacity: 0.4,
+    },
     /* main inputs */
     input: {
         width: "100%",
@@ -488,7 +521,16 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#1E252D",
     },
+    inputError: {
+        borderColor: "#EF4444", // red neon border
+    },
 
+    errorText: {
+        color: "#EF4444",
+        fontSize: 14,
+        marginTop: 6,
+        marginLeft: 4,
+    },
     row: {
         width: "100%",
         flexDirection: "row",

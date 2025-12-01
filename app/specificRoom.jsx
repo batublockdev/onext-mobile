@@ -344,6 +344,7 @@ export default function RoomDetail({ }) {
         try {
             const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
             const data = await res.json();
+
             setRooms(data[0]);
 
             if (data[0].user_assest == 'false') {
@@ -393,7 +394,10 @@ export default function RoomDetail({ }) {
             const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
 
             const limitStart = new Date(endTime.getTime() + 600 * 1000);
-
+            if (now > limit && !data[0].supreme_distributed) {
+                console.log("limit passed")
+                setMessage("El tiempo de resolucion ha pasado, el resultado sera resuelto en breve");
+            }
             if (data[0].user_bet !== "false") {
                 setBet(true);
                 console.log("has jugado")
@@ -423,23 +427,51 @@ export default function RoomDetail({ }) {
                 console.log("late");
             }
             if (data[0].user_assest != 'false' && rejected) {
-                if (data[0].supreme_distributed == true) {
-                    setClaimAvailable(true);
-                    setReject(false);
-                    setMessage(""),
-                        setMatchResult(data[0].supreme_result)
+                setMessage("El resultado ha sido rechazado, este sera resuelto en breve")
+                console.log("late rejected");
+            }
+            if (data[0].supreme_distributed == true) {
+                setClaimAvailable(true);
+                setReject(false);
+                setMessage(""),
+                    setMatchResult(data[0].supreme_result)
+                if (now > limit && !(data[0].user_assest == "approve" || data[0].user_assest == "reject")) {
+                    if (data[0].supreme_result == data[0].user_bet) {
 
-                    console.log("late approved");
-                    if (data[0].user_claim == true) {
-                        setMessage("Ya reclamaste esta recompensa 💰");
+                    } else {
+                        setMessage("no obtuvimos tu ponion acerca del resultado y tu prediccion fue incorrecta");
+
+                    }
+                }
+
+                if (data[0].supreme_result == data[0].result) {
+                    if (data[0].user_assest == "approve") {
+                        console.log("late approved");
+                        if (data[0].user_claim == true) {
+                            setMessage("Ya reclamaste esta recompensa 💰");
+                        }
+                    } else {
+                        setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
                     }
 
                 } else {
-                    setMessage("El resultado ha sido rechazado, este sera resuelto en breve")
-                    console.log("late rejected");
+                    if (data[0].user_assest == "reject") {
+                        console.log("late approved");
+                        if (data[0].user_claim == true) {
+                            setMessage("Ya reclamaste esta recompensa 💰");
+                        }
+                    } else {
+                        setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
+                    }
+
                 }
 
+
+
             }
+
+
+
 
 
         } catch (error) {
@@ -615,7 +647,7 @@ export default function RoomDetail({ }) {
         </View>
 
         <Text style={styles.betStatus}>
-            {betis ? result ? "¿Cual fue el equipo ganador? " : "Ya realizaste tu predicion ✅" : "Aún no has jugado ❌"}
+            {betis ? result && !message ? "¿Cual fue el equipo ganador? " : "Ya realizaste tu predicion ✅" : "Aún no has jugado ❌"}
         </Text>
 
         {/* Users list */}
@@ -672,7 +704,7 @@ export default function RoomDetail({ }) {
                     ))}
                 </>
             )}
-            {result && (
+            {result && !message && (
                 <>
                     {["Team_local", "Tie", "Team_away"].map((option) => (
                         <TouchableOpacity

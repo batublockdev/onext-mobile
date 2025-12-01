@@ -52,7 +52,7 @@ export default function ProfileScreen() {
                 {/* --- Profile Header --- */}
                 <View style={styles.profileHeader}>
                     <View style={styles.profileCircle}>
-                        <Text style={{ color: "white", fontSize: 26 }}>{username.substring(0, 1)}</Text>
+                        <Text style={{ color: "white", fontSize: 26 }}>{username ? username.substring(0, 1) : "?"}</Text>
                     </View>
 
                     <Text style={styles.username}>{username}</Text>

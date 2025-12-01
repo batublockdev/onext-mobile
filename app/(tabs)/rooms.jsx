@@ -97,12 +97,42 @@ export default function Rooms() {
                     status = "Pendiente"
                 }
             }
-            if ((data[i].ready && data[i].result == data[i].user_bet) || (data[i].result && data[i].supreme_result == data[i].user_bet && data[i].supreme_distributed)) {
-                status = "Ganada"
+            if (data[0].distributed == true) {
+                if (now > limit && !(data[0].user_assest == "approve" || data[0].user_assest == "reject")) {
+                    if (data[0].supreme_result == data[0].user_bet) {
+                        status = "Ganada"
+                    } else {
+                        status = "Perdida"
+
+                    }
+                } else if (data[0].supreme_result == data[0].result) {
+                    if (data[0].user_assest == "approve") {
+                        status = "Ganada"
+                    } else {
+                        status = "Perdida"
+
+                    }
+                } else {
+                    if (data[0].user_assest == "reject") {
+                        status = "Ganada"
+                    }
+                    else {
+                        status = "Perdida"
+
+                    }
+                }
+
+
+
+            } else {
+                if ((data[i].ready && data[i].result == data[i].user_bet) || (data[i].result && data[i].supreme_result == data[i].user_bet && data[i].supreme_distributed)) {
+                    status = "Ganada"
+                }
+                if ((data[i].ready && data[i].result != data[i].user_bet) || (data[i].result && data[i].supreme_result != data[i].user_bet && data[i].supreme_distributed)) {
+                    status = "Perdida"
+                }
             }
-            if ((data[i].ready && data[i].result != data[i].user_bet) || (data[i].result && data[i].supreme_result != data[i].user_bet && data[i].supreme_distributed)) {
-                status = "Perdida"
-            }
+
 
 
             if (startGame > now) {

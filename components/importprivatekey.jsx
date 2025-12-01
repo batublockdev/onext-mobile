@@ -17,11 +17,11 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
     const [msgAnalys, setMsg2] = useState("");
     const [keyPr, setKey] = useState("");
 
-    const { userx, setUserx } = useApp();
+    const { userx, setUserx, setKeypair } = useApp();
 
     const [reason, setReason] = useState("");
     const [existUser, setexistUser] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState("Verifying PIN...");
+    const [loadingMessage, setLoadingMessage] = useState("Crea tu PIN para continuar.");
     const [Result, setResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     useEffect(() => {
@@ -43,14 +43,15 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
             description: "Paste your private key in the box to restore your account.",
             image: "",
         },
+
         {
             title: "Create PIN",
             description: "Set a PIN to keep your wallet secure.",
             image: "",
         },
         {
-            title: "Create PIN",
-            description: "Set a PIN to keep your wallet secure.",
+            title: "",
+            description: "",
             image: "",
         },
         {
@@ -69,6 +70,7 @@ onComplete={handlePinComplete}
         // Here you can add logic to analyze the private key
         try {
             const keypairUser = Keypair.fromSecret(key);
+            setKeypair(keypairUser);
             console.log("Public Key:", keypairUser.publicKey());
             setStep(step + 1);
             setKey(key);
@@ -117,20 +119,13 @@ onComplete={handlePinComplete}
 
     return (
         <>
-            {
-                status && (
-                    <ConfirmationMessage
-                        success={status === "success"}
-                        message={msg}
-                        reason={reason}
-                        onClose={() => setStatus(null)}
-                    />
-                )
-            }
+
             {
                 step == 4 && (
                     <PinVerification
                         mode="register"
+                        status={status}
+
                         message={loadingMessage}
                         onComplete={handlePinComplete}
 
@@ -226,15 +221,15 @@ onComplete={handlePinComplete}
         </>
     );
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#0033cc",
+        backgroundColor: "#0D0D0D",
         padding: 24,
         justifyContent: "space-between",
     },
 
+    /* IMAGE */
     imageContainer: {
         alignItems: "center",
         marginTop: 40,
@@ -246,20 +241,73 @@ const styles = StyleSheet.create({
         resizeMode: "contain",
     },
 
-    textContainer: {},
+    /* TEXT AREA */
+    textContainer: {
+        marginTop: 10,
+    },
 
     title: {
-        color: "white",
-        fontSize: 32,
-        fontWeight: "bold",
+        color: "#FFF",
+        fontSize: 30,
+        fontWeight: "800",
         marginBottom: 10,
+        letterSpacing: 0.3,
     },
 
     description: {
-        color: "rgba(255,255,255,0.7)",
+        color: "#6B7280",
         fontSize: 16,
+        lineHeight: 22,
+        fontWeight: "500",
     },
 
+    /* INPUT + ANALYZE CARD */
+    container3: {
+        marginTop: 20,
+
+        alignItems: "center",
+    },
+
+    input: {
+        width: "100%",
+        height: 160,
+        borderWidth: 1,
+        borderRadius: 14,
+        borderColor: "#333",
+        padding: 14,
+        fontSize: 16,
+        textAlignVertical: "top",
+        marginBottom: 18,
+        marginTop: 16,
+        backgroundColor: "#1E1E1E",
+        color: "#FFF",
+    },
+
+    continueBtn: {
+        width: "100%",
+        paddingVertical: 14,
+        borderRadius: 12,
+        backgroundColor: "#35D787",
+        alignItems: "center",
+        elevation: 4,
+    },
+
+    continueText: {
+        color: "#000",
+        fontSize: 18,
+        fontWeight: "700",
+    },
+
+    warning: {
+        marginTop: 14,
+        fontSize: 13,
+        color: "#ff4d4d",
+        textAlign: "center",
+        width: "95%",
+        fontWeight: "600",
+    },
+
+    /* BOTTOM BAR */
     bottomBar: {
         flexDirection: "row",
         alignItems: "center",
@@ -268,8 +316,9 @@ const styles = StyleSheet.create({
     },
 
     skipText: {
-        color: "white",
+        color: "#6B7280",
         fontSize: 16,
+        fontWeight: "600",
     },
 
     dotsContainer: {
@@ -281,89 +330,35 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 50,
-        backgroundColor: "rgba(255,255,255,0.4)",
+        backgroundColor: "rgba(255,255,255,0.25)",
     },
 
     activeDot: {
-        backgroundColor: "white",
+        backgroundColor: "#35D787",
+        width: 22,
+        height: 8,
+        borderRadius: 6,
     },
 
     nextButton: {
-        backgroundColor: "white",
+        backgroundColor: "#161616",
         width: 48,
         height: 48,
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "#333",
+        shadowColor: "#000",
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
 
     nextArrow: {
         fontSize: 22,
-        color: "#0033cc",
+        color: "#35D787",
+        fontWeight: "900",
     },
-    container2: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: "white",
-        alignItems: "center",
-    },
-
-    title2: {
-        fontSize: 26,
-        fontWeight: "700",
-        marginBottom: 20,
-        marginTop: 40,
-    },
-
-    input: {
-        width: "95%",
-        height: 160,
-        borderWidth: 1,
-        borderRadius: 12,
-        borderColor: "#CCC",
-        padding: 12,
-        fontSize: 16,
-        textAlignVertical: "top",
-        marginBottom: 20,
-        marginTop: 20,
-        backgroundColor: "#F9F9F9"
-    },
-
-    continueBtn: {
-        width: "95%",
-        paddingVertical: 14,
-        borderRadius: 12,
-        backgroundColor: "#0AB4FF",
-        alignItems: "center",
-        marginBottom: 10,
-    },
-
-    continueText: {
-        color: "white",
-        fontSize: 18,
-        fontWeight: "700",
-    },
-
-    backBtn: {
-        width: "95%",
-        paddingVertical: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#DDD",
-        alignItems: "center",
-        marginTop: 10,
-    },
-
-    backText: {
-        fontSize: 16,
-        fontWeight: "600",
-    },
-
-    warning: {
-        marginTop: 20,
-        fontSize: 13,
-        color: "red",
-        textAlign: "center",
-        width: "90%",
-    }
 });
+

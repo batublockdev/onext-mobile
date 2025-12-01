@@ -52,10 +52,9 @@ const HomeScreen = () => {
                 setidcode(userx[0].id_app)
                 setposition(userx[0].position)
 
-                if (userx[0].position == 1 || userx[0].position == 2) {
 
-                    supremeCheck()
-                }
+                supremeCheck()
+
 
             }
         }
@@ -94,31 +93,39 @@ const HomeScreen = () => {
             const data = await res.json();
             console.log("supreme data:", data);
             const result = data.data;
-            for (let i = 0; i < result.length; i++) {
-                if (result[i].honest1 !== userx[0].pub_key && result[i].honest2 !== userx[0].pub_key) {
-                    console.log("need to claim assestxxxxxxx")
 
-                    const a = {
-                        roomid: result[i].game_id,
-                        match_id: result[i].game_id,
-                        result: result[i].result,
-                        type: 1,
-                        league: "Supreme Court",
-                        week: result[i].fecha,
-                        team1: result[i].local_team_name,
-                        team2: result[i].away_team_name,
-                        logo1: result[i].local_team_logo,
-                        logo2: result[i].away_team_logo,
-                        reason: "Resultado",
-                        honest1: result[i].honest1,
-                        honest2: result[i].honest2,
-                        adm: result[i].adm,
-                        externalUser: result[i].externalUser,
-                        result: result[i].result,
-                        gameState: "supreme"
+
+            for (let i = 0; i < result.length; i++) {
+                console.log("supreme honest 1:", result[i].honest1);
+                console.log("supreme honest 2:", result[i].honest2);
+                console.log("user pub key:", userx[0].pub_key);
+                if (result[i].honest1 !== userx[0].pub_key && result[i].honest2 !== userx[0].pub_key) {
+                    if (userx[0].position == 1 || userx[0].position == 2) {
+
+                        console.log("need to claim assestxxxxxxx")
+
+                        const a = {
+                            roomid: result[i].game_id,
+                            match_id: result[i].game_id,
+                            result: result[i].result,
+                            type: 1,
+                            league: "Supreme Court",
+                            week: result[i].fecha,
+                            team1: result[i].local_team_name,
+                            team2: result[i].away_team_name,
+                            logo1: result[i].local_team_logo,
+                            logo2: result[i].away_team_logo,
+                            reason: "Resultado",
+                            honest1: result[i].honest1,
+                            honest2: result[i].honest2,
+                            adm: result[i].adm,
+                            externalUser: result[i].externalUser,
+                            result: result[i].result,
+                            gameState: "supreme"
+                        }
+                        setmyMachesvar(prev => [...prev, a]);
                     }
-                    setmyMachesvar(prev => [...prev, a]);
-                } else if (result[i].distributed == true && ((result[i].honest1_claim == false && result[i].honest1 == userx[0].pub_key) || (result[i].honest2_claim == false && result[i].honest2 == userx[0].pub_key))) {
+                } else if (result[i].distributed == true && (((result[i].honest1_claim == false || !result[i].honest1_claim) && result[i].honest1 == userx[0].pub_key) || ((result[i].honest2_claim == false || !result[i].honest2_claim) && result[i].honest2 == userx[0].pub_key))) {
                     console.log("need to claim assest")
                     const a = {
                         roomid: result[i].game_id,
@@ -178,7 +185,9 @@ const HomeScreen = () => {
             const endTime = new Date(data[0].finish_time);
             const limit = new Date(endTime.getTime() + 18000 * 1000);
             const limitStart = new Date(endTime.getTime() + 600 * 1000);
-            if (now > limit && data[0].user_bet != "false" && !data[0].result) {
+            const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
+
+            if (now > limitSupreme && data[0].user_bet != "false" && !data[0].result && data[0].active && !data[0].user_claim) {
                 console.log("no result so claim refund");
                 const a = {
                     roomid: rooms[i].room_id,
@@ -243,25 +252,48 @@ const HomeScreen = () => {
                         setmyMachesvar(prev => [...prev, a]);
                     } else
                         if (data[0].ready && !data[0].user_claim) {
-                            console.log("Game without claiming");
-                            const a = {
-                                roomid: rooms[i].room_id,
-                                type: 0,
+                            console.log("Game without claiming", data[0]);
+                            let show = false;
+                            if (data[0].supreme_distributed == true) {
+                                if (now > limit && !(data[0].user_assest == "approve" || data[0].user_assest == "reject")) {
+                                    if (data[0].supreme_result == data[0].user_bet) {
+                                        show = true;
+                                    }
+                                } else if (data[0].supreme_result == data[0].result) {
+                                    if (data[0].user_assest == "approve") {
+                                        show = true;
+                                    }
+                                } else {
+                                    if (data[0].user_assest == "reject") {
+                                        show = true;
+                                    }
+                                }
 
-                                match_id: rooms[i].match_id,
-                                league: "Colombia primera A",
-                                week: rooms[i].fecha,
-                                team1: rooms[i].local_team_name,
-                                team2: rooms[i].away_team_name,
-                                logo1: rooms[i].local_team_logo,
-                                logo2: rooms[i].away_team_logo,
-                                reason: "Cobrar",
-                                howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
-                                    .toFixed(6)
-                                    .replace(/\.?0+$/, "")} usd`,
-                                gameState: "upcoming"
+
+
+                            } else {
+                                show = true;
+
+                            } if (show) {
+                                const a = {
+                                    roomid: rooms[i].room_id,
+                                    type: 0,
+
+                                    match_id: rooms[i].match_id,
+                                    league: "Colombia primera A",
+                                    week: rooms[i].fecha,
+                                    team1: rooms[i].local_team_name,
+                                    team2: rooms[i].away_team_name,
+                                    logo1: rooms[i].local_team_logo,
+                                    logo2: rooms[i].away_team_logo,
+                                    reason: "Cobrar",
+                                    howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
+                                        .toFixed(6)
+                                        .replace(/\.?0+$/, "")} usd`,
+                                    gameState: "upcoming"
+                                }
+                                setmyMachesvar(prev => [...prev, a]);
                             }
-                            setmyMachesvar(prev => [...prev, a]);
                         }
 
 
