@@ -29,34 +29,34 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
     }, [privateKey]);
     const steps = [
         {
-            title: "Welcome",
-            description: "Register your account quickly and securely.",
+            title: "Bienvenido",
+            description: "Crea tu cuenta de forma rápida y segura.",
             image: "",
         },
         {
-            title: "Download Wallet",
-            description: "Install our wallet app to continue.",
+            title: "Instalar la billetera",
+            description: "Descarga e instala nuestra billetera para continuar.",
             image: "",
         },
         {
-            title: "Import Private Key",
-            description: "Paste your private key in the box to restore your account.",
+            title: "Restaurar billetera",
+            description: "Ingresa tu frase de recuperación o clave secreta para restaurar tu cuenta. Esta información se mantiene solo en tu dispositivo.",
             image: "",
         },
 
         {
-            title: "Create PIN",
-            description: "Set a PIN to keep your wallet secure.",
+            title: "Crear PIN",
+            description: "Configura un PIN para proteger el acceso a tu billetera.",
             image: "",
         },
         {
-            title: "",
-            description: "",
+            title: "Protege tu información",
+            description: "Nunca compartas tu frase de recuperación. La app nunca envía ni almacena esta información en servidores.",
             image: "",
         },
         {
-            title: "Done!",
-            description: "App is ready to use.",
+            title: "¡Listo!",
+            description: "Tu billetera está configurada y lista para usar.",
             image: "",
         },
     ];
@@ -66,7 +66,7 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
 mode="register"
 onComplete={handlePinComplete}
 />*/
-    const onAnalyze = (key) => {
+    const onImportLocal = (key) => {
         // Here you can add logic to analyze the private key
         try {
             const keypairUser = Keypair.fromSecret(key);
@@ -142,46 +142,46 @@ onComplete={handlePinComplete}
                         <View style={styles.textContainer}>
                             <Text style={styles.title}>{steps[step].title}</Text>
                             <Text style={styles.description}>{steps[step].description}</Text>
-                            {step == 2 && (
+                            {step === 2 && (
                                 <View style={styles.container3}>
-                                    {/* Title */}
-                                    <Text style={styles.warning}>
-                                        {msgAnalys}
-                                    </Text>
-                                    {/* Input Box */}
-                                    <TextInput
-                                        style={styles.input
 
-                                        }
-                                        placeholder="Paste your private key here"
+                                    {/* Aviso de seguridad */}
+                                    <Text style={styles.warning}>
+                                        Importa tu frase de recuperación o clave secreta.
+                                        Esta información se guarda únicamente en tu dispositivo
+                                        y nunca se envía a ningún servidor.
+                                    </Text>
+
+                                    {/* Campo de clave */}
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Ingresa tu clave de recuperación"
                                         placeholderTextColor="#999"
                                         multiline={true}
+                                        secureTextEntry={true}
                                         value={privateKey}
                                         onChangeText={setPrivateKey}
                                     />
 
-                                    {/* Continue Button */}
+                                    {/* Botón continuar */}
                                     <TouchableOpacity
                                         style={[
                                             styles.continueBtn,
                                             privateKey.length < 10 && { opacity: 0.4 }
                                         ]}
                                         disabled={privateKey.length < 10}
-                                        onPress={() => onAnalyze(privateKey)}
+                                        onPress={() => onImportLocal(privateKey)}
                                     >
-                                        <Text style={styles.continueText}>Analizar</Text>
+                                        <Text style={styles.continueText}>Continuar</Text>
                                     </TouchableOpacity>
 
+                                    {/* Aviso extra */}
                                     <Text style={styles.warning}>
-                                        {msgAnalys}
+                                        Nunca compartas tu clave con nadie.
+                                        Nosotros no almacenamos ni enviamos esta información.
                                     </Text>
-
-                                    {/* Safety Notice */}
-                                    <Text style={styles.warning}>
-                                        Never share your private key with anyone.
-                                        Keep it safe and secure.
-                                    </Text>
-                                </View>)}
+                                </View>
+                            )}
                         </View>
 
                         <View style={styles.bottomBar}>

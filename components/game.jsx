@@ -18,7 +18,7 @@ const MatchesScreen = ({ onOpen }) => {
                 const data = await response.json();
                 setMatches(data);
             } catch (error) {
-                console.error('Error fetching matches:', error);
+                console.log('Error fetching matches:', error);
             }
         };
 
@@ -38,18 +38,18 @@ const MatchesScreen = ({ onOpen }) => {
     const dateHour = (start) => {
         const date = new Date(start);
 
-        const hour = date.getUTCHours().toString().padStart(2, "0") + ":" +
-            date.getUTCMinutes().toString().padStart(2, "0");
+        const hour = date.toLocaleString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+            timeZone: "America/Bogota"
+        });
 
-        const day = date.getUTCDate();
-        const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
         return hour
     };
     const dateDate = (start) => {
         const date = new Date(start);
 
-        const hour = date.getUTCHours().toString().padStart(2, "0") + ":" +
-            date.getUTCMinutes().toString().padStart(2, "0");
 
         const day = date.getUTCDate();
         const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });

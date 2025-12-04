@@ -2,14 +2,16 @@ import { useUser } from "@clerk/clerk-react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-
-
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import DisclaimerModal from "../components/disclaimer";
+import { FlatList, ScrollView, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfirmPrediction from "../components/ConfirmationPrediction";
 import { ERROR_MESSAGES } from "../components/error";
 import { teamLogos } from "../components/teamLogos";
 import { useApp } from "./contextUser";
 import LoadingOverlay from "../components/loadingCompnent";
+import TrustFullScreenLoading from "../components/TrustFullScreenLoading";
+import TeamShield from "../components/TeamShield";
+import { teamColorsByID } from "../components/TeamColor";
 const {
     place_bet,
     claim,
@@ -22,22 +24,28 @@ const { decryptOnly } = require('../self-wallet/wallet');
 export default function RoomDetail({ }) {
     const router = useRouter();
     const [loadingx, setIsLoading] = useState(false);
+
     const { isSignedIn, user, isLoaded } = useUser();
+
     const [rooms, setRooms] = useState([]);
     const [canClaimRefund, setcanClaimRefund] = useState(false);
     const [message, setMessage] = useState(null);
     const [result, setResult] = useState(null);
     const [reject, setReject] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const [fee, setFee] = useState("");
+
+    const [LastPred, setLastPred] = useState(null);
 
     const [betis, setBet] = useState(null);
     const [activeBet, setactiveBet] = useState(null);
     const [lastAsses, setlastAsses] = useState(null);
     const [LastPlay, setLastPlay] = useState(null);
-    const [collateral, setColateral] = useState(false);
+    let collateral = false;
 
     const [msgLoading, setMsgLoading] = useState("Cargando");
-
-
+    const [disclaimer, setDisclaimer] = useState(true)
 
 
     const [teamSelected, setteamSelected] = useState(null);   // e.g. "Team_local"
@@ -49,11 +57,16 @@ export default function RoomDetail({ }) {
     const [status, setStatus] = useState(null); // null | "success" | "error".
     const [readytoSend, setreadytoSend] = useState(null); // null | "success" | "error"
 
-    const [pinSend, setpinSend] = useState(null); // null | "success" | "error"
+    const [amount, setamount] = useState(""); // null | "success" | "error"
 
     const [reason, setReason] = useState("");
-    const [msg, setMsg] = useState("");
+    const [color1, setColor1] = useState([]);
+    const [color2, setColor2] = useState([]);
 
+
+    const [msg, setMsg] = useState("");
+    let id1 = 0;
+    let id2 = 0;
     const { userx, keypair } = useApp();
     const [loadingMessage, setLoadingMessage] = useState("Verifying PIN...");
     const [done, setdone] = useState(false);
@@ -93,10 +106,26 @@ export default function RoomDetail({ }) {
             const trust = BigInt(valTrust.lo._value);
 
 
-            const amountUsd = (Number(usd) / 10_000_000).toFixed(2);
+            let amountUsd = (Number(usd) / 10_000_000).toFixed(2);
             const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
+
+            if (amountUsd != 0) {
+                amountUsd - (rooms.min_amount / 10000000)
+                console.log(amountUsd)
+            }
+            let cop = await getUsdToCop(amountUsd);
+            console.log(cop)
+
             /** we got to show all the info */
-            setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
+            if (amountTrust == 0) {
+                setMsgLoading(` + ${cop} `)
+
+            } else {
+                let trust = await getUsdToCop(amountTrust);
+                setMsgLoading(` + ${cop} y + ${trust} Trust`)
+
+            }
+
 
             try {
                 const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
@@ -104,7 +133,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: true, ready: true }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: true, ready: true, colaterall: rooms.colaterall, amount_earned: cop }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -119,9 +148,7 @@ export default function RoomDetail({ }) {
                 console.error('Error fetching user data:', error);
             }
             setStatus("success");
-            setMsgLoading("listo ...")
 
-            setIsLoading(false);
             setMessage("Ya reclamaste esta recompensa 💰");
 
         } catch (error) {
@@ -151,13 +178,19 @@ export default function RoomDetail({ }) {
             const amount = (Number(lo) / 10_000_000).toFixed(2);
             setMsg(`Has reclamado ${amount} USD`);
             console.log("Result number:", lo.toString());
+            /** we got to show all the info */
+            let cop = await getUsdToCop(amount);
+
+            /** we got to show all the info */
+            setMsgLoading(` + ${cop} `)
+
             try {
                 const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: claimAvailable, ready: activeBet }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: activeBet, ready: claimAvailable, colaterall: rooms.colaterall, amount_earned: cop }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -172,8 +205,8 @@ export default function RoomDetail({ }) {
                 console.error('Error fetching user data:', error);
             }
             setStatus("success");
-            setIsLoading(false);
             setMessage("Ya reclamaste esta recompensa 💰");
+
 
 
         } catch (error) {
@@ -240,9 +273,6 @@ export default function RoomDetail({ }) {
 
             }
 
-        } finally {
-            setIsLoading(false);
-
         }
     };
     const handleDesition = async (answer) => {
@@ -270,7 +300,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: answer, claim: false, active: true, ready: ready }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, assest: answer, claim: false, active: true, ready: ready, colaterall: rooms.colaterall, amount_earned: rooms.amount_earned }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -346,7 +376,23 @@ export default function RoomDetail({ }) {
             const data = await res.json();
 
             setRooms(data[0]);
+            let fee = 0;
+            console.log(data[0].colaterall)
+            if (data[0].colaterall) {
+                fee = data[0].min_amount * 0.20;
+                console.log("fee cop")
+            } else {
+                fee = data[0].min_amount * 0.10;
+                console.log("fee co2p")
 
+
+            }
+
+            let feeCop = await getUsdToCop(fee / 10000000);
+
+            setFee(feeCop)
+            let cop = await getUsdToCop(data[0].min_amount / 10000000);
+            setamount(cop);
             if (data[0].user_assest == 'false') {
                 setUserDecision(null)
             } else {
@@ -360,11 +406,28 @@ export default function RoomDetail({ }) {
 
             setMatchResult(data[0].result)
             setactiveBet(data[0].active)
+            console.log(data[0])
             let noPlayUsers = 0;
             let noAssessUsers = 0;
             let rejected = false;
+            let lastBet = "";
+            console.log(data[0].local_team_id)
+            id1 = data[0].local_team_id;
+            setColor1(teamColorsByID[id1].colors)
+            id2 = data[0].away_team_id;
+            setColor2(teamColorsByID[id2].colors)
+
             for (let i = 0; i < data[0].room_users.length; i++) {
                 const item = data[0].room_users[i];
+                if (!(data[0].active)) {
+                    if (item.bet != "false") {
+                        setLastPred(item.bet)
+                    }
+                }
+
+
+
+
                 if (item.assesment == "false") {
                     noAssessUsers += 1;
                 }
@@ -392,9 +455,16 @@ export default function RoomDetail({ }) {
             const endTime = new Date(data[0].finish_time);
             const limit = new Date(endTime.getTime() + 18000 * 1000);
             const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
+            const nowUTC2 = new Date(limitSupreme);
 
-            const limitStart = new Date(endTime.getTime() + 600 * 1000);
-            if (now > limit && !data[0].supreme_distributed) {
+            console.log("Supreme limit in Colombia:", nowUTC2.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
+            console.log("End in Colombia:", endTime.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
+
+
+
+
+            const limitStart = new Date(endTime.getTime());
+            if (now > limit && !data[0].result && !data[0].supreme_distributed) {
                 console.log("limit passed")
                 setMessage("El tiempo de resolucion ha pasado, el resultado sera resuelto en breve");
             }
@@ -402,7 +472,8 @@ export default function RoomDetail({ }) {
                 setBet(true);
                 console.log("has jugado")
             }
-            if (now > limitSupreme && data[0].user_bet != "false" && data[0].active && !data[0].result) {
+            if (now > limitSupreme && data[0].user_bet != "false" && data[0].active && !data[0].result && !data[0].supreme_distributed) {
+                setMessage("")
                 setcanClaimRefund(true);
                 console.log("no result so claim refund");
                 if (data[0].user_claim == true) {
@@ -417,7 +488,7 @@ export default function RoomDetail({ }) {
                     setMessage("Ya reclamaste esta recompensa 💰");
                 }
             }
-            if (now > endTime && data[0].user_bet != "false" && data[0].active && !data[0].result) {
+            if (limit > now && now > endTime && data[0].user_bet != "false" && data[0].active && !data[0].result) {
                 //limit this t 5hours
                 setResult(true);
                 console.log("subir resultado");
@@ -471,13 +542,12 @@ export default function RoomDetail({ }) {
             }
 
 
-
-
-
+            setLoading(false)
         } catch (error) {
             console.error("Error fetching rooms:", error);
         }
     };
+    console.log(id1)
     const room = {
         title: `${rooms.local_team_name} vs ${rooms.away_team_name}`,
         local_team_name: rooms.local_team_name,
@@ -487,18 +557,11 @@ export default function RoomDetail({ }) {
         start_time: rooms.start_time,
         finish_time: rooms.finish_time,
         active: rooms.active === "true" || rooms.active === true,
-        bet: rooms.user_bet !== "false" && rooms.user_bet !== false,
+        bet: rooms.user_bet,
         users: rooms.room_users ? rooms.room_users : [],
-        /* title: `${item.local_team_name} vs ${item.away_team_name}`,
-         local_team_name: item.local_team_name,
-         away_team_name: item.away_team_name,
-         start_time: item.start_time,
-         finish_time: item.finish_time,
-         active: item.active,
-         bet: item.user_bet,
-         users: JSON.stringify(item.room_users),
-         local_team_logo: item.local_team_logo,
-         away_team_logo: item.away_team_logo,*/
+        color1: id1 != 0 ? teamColorsByID[id1].colors : teamColorsByID[21].colors,
+        color2: id2 != 0 ? teamColorsByID[id2].colors : teamColorsByID[21].colors,
+
     };
     function parseContractError(error) {
         const match = String(error).match(/Error\(Contract, #(\d+)\)/);
@@ -524,12 +587,14 @@ export default function RoomDetail({ }) {
 
             //async function place_bet(address, id_bet, game_id, team, amount, setting, keypairUser) {
             const value = Number(rooms.min_amount);
-
+            console.log("Colateral", collateral)
             console.log(value)
             setLoadingMessage("Enviando prediccion a la red")
             await place_bet(userx[0].pub_key, id_bet, rooms.match_id, team, value, params.room_id, keypairUser, collateral);
             let active = false;
-            if (LastPlay) {
+            console.log(LastPred)
+            console.log(team)
+            if ((LastPred != "false" && LastPred != null) && LastPred != team) {
                 active = true;
                 setactiveBet(true);
             }
@@ -541,7 +606,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: team, claim: false, active: active, ready: false }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: team, claim: false, active: active, ready: false, colaterall: collateral, amount_earned: 0 }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -579,469 +644,525 @@ export default function RoomDetail({ }) {
         }
         setreadytoSend(true);
     };
+    async function getUsdToCop(usd) {
+        const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        const data = await res.json();
+        const result = data.rates.COP * usd;
+        const rounded = Math.round(usd * data.rates.COP);
+
+        return formatCOP(rounded.toFixed(6));
+    }
+    function formatCOP(value) {
+
+        return new Intl.NumberFormat("es-CO", {
+            style: "currency",
+            currency: "COP",
+            minimumFractionDigits: 0,
+        }).format(value);
+    }
+    if (loading) {
+        return <TrustFullScreenLoading />;
+    }
 
 
-    return (<View style={styles.container}>
-        <LoadingOverlay
-            visible={loadingx}
-            status={status}
-            message={msgLoading}
-            onAutoClose={() => setIsLoading(false)}
-            onClose={() => setIsLoading(false)}
-        />
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push({
-            pathname: "/rooms",
-        })}>
+    return (
 
-            <Ionicons name="arrow-back" size={22} color="#333" />
-        </TouchableOpacity>
 
-        {/* Header */}
-        <View style={styles.header}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={{ paddingBottom: 80 }}
+            showsVerticalScrollIndicator={false}
+        >
 
-            <Text style={styles.roomTitle}>{room.title}</Text>
-            <Text
-                style={[
-                    styles.status,
-                    { color: activeBet ? "#28A745" : "#FF3B30" },
-                ]}
-            >
-                {activeBet ? "Activo" : "Esperando jugadores"}
-            </Text>
-        </View>
-
-        {/* Teams */}
-        <View style={styles.teamsContainer}>
-            <View style={styles.team}>
-                <Image
-                    source={teamLogos[room.local_team_logo]}
-                    style={styles.logo}
-                />
-                <Text style={styles.teamName}>{room.local_team_name}</Text>
-            </View>
-
-            <Text style={styles.vs}>VS</Text>
-
-            <View style={styles.team}>
-                <Image
-                    source={teamLogos[room.away_team_logo]} style={styles.logo}
-
-                />
-                <Text style={styles.teamName}>{room.away_team_name}</Text>
-            </View>
-        </View>
-
-        {/* Match info */}
-        <Text style={styles.time}>
-            {new Date(room.start_time).getUTCDate()} {" "}
-            {new Date(room.start_time).toLocaleString("en-US", { month: "short", timeZone: "UTC" })}
-        </Text>
-
-        <View style={styles.minAmountContainer}>
-            <Text style={styles.minAmountLabel}>En juego:</Text>
-            <Text style={styles.minAmountValue}>
-                {`${(parseFloat(rooms.min_amount) / 10_000_000)
-                    .toFixed(6)
-                    .replace(/\.?0+$/, "")} USD`}
-            </Text>
-        </View>
-
-        <Text style={styles.betStatus}>
-            {betis ? result && !message ? "¿Cual fue el equipo ganador? " : "Ya realizaste tu predicion ✅" : "Aún no has jugado ❌"}
-        </Text>
-
-        {/* Users list */}
-        <View style={styles.usersSection}>
-            <Text style={styles.sectionTitle}>Jugadores en la sala</Text>
-            <FlatList
-                data={room.users}
-                horizontal
-                keyExtractor={(item, index) => item.id?.toString() || index.toString()}
-                renderItem={({ item }) => (
-                    <View
-                        style={[
-                            styles.userCard,
-                            item.bet && item.bet !== "false" || (betis && item.username === user.firstName)
-                                ? styles.playedCard
-                                : styles.notPlayedCard,
-                        ]}
-                    >
-                        <Text
-                            style={[
-                                styles.userName,
-                                item.bet && item.bet !== "false" || (betis && item.username === user.firstName)
-                                    ? styles.playedText
-                                    : styles.notPlayedText,
-                            ]}
-                        >
-                            {item.username === user.firstName ? "Yo" : item.username || item.user_id || "User"}
-                        </Text>
-                    </View>
-                )}
-                showsHorizontalScrollIndicator={false}
+            <LoadingOverlay
+                visible={loadingx}
+                status={status}
+                message={msgLoading}
+                onAutoClose={() => setIsLoading(false)}
+                onClose={() => setIsLoading(false)}
             />
-        </View>
 
-        {/* Betting options or result status */}
-        <View style={styles.optionsContainer}>
-            {/* CASE 1: User hasn’t bet yet and match still active */}
-            {!betis && !message && (
-                <>
-                    {["Team_local", "Tie", "Team_away"].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={styles.optionButton}
-                            onPress={() => handlePredict(option)}
-                        >
-                            <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
-                                {option === "Team_local"
-                                    ? room.local_team_name
-                                    : option === "Tie"
-                                        ? "Empate"
-                                        : room.away_team_name}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </>
-            )}
-            {result && !message && (
-                <>
-                    {["Team_local", "Tie", "Team_away"].map((option) => (
-                        <TouchableOpacity
-                            key={option}
-                            style={styles.optionButton}
-                            onPress={() => handlesummit(option)}
-                        >
-                            <Text style={styles.optionText} numberOfLines={1} ellipsizeMode="tail">
-                                {option === "Team_local"
-                                    ? room.local_team_name
-                                    : option === "Tie"
-                                        ? "Empate"
-                                        : room.away_team_name}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </>
-            )}
-            {message && (
-                <Text style={{ color: "#007AFF", marginTop: 10, fontWeight: "600" }}>
-                    {message}
-                </Text>
-            )}
-            {canClaimRefund && !message && (
-                <TouchableOpacity
-                    style={[styles.decisionButton, { backgroundColor: "#FFA500" }]}
-                    onPress={() => handleRefund()}
-                >
-                    <Text style={styles.decisionText}>Reclamar Reembolso 💸</Text>
-                </TouchableOpacity>
-            )}
+            {/* Back Button */}
+            <TouchableOpacity style={styles.backButton} onPress={() => router.push({ pathname: "/rooms" })}>
+                <Ionicons name="arrow-back" size={22} color="#fff" />
+            </TouchableOpacity>
 
-            {/* CASE 2: User already bet but no result yet */}
-            {betis && !matchResult && !canClaimRefund && !message && !result && (
-                <Text style={styles.waitingMessage}>
-                    Partido sin terminar ...
-                </Text>
-            )}
+            {/* GAME HEADER */}
+            <View style={styles.gameHeader}>
+                <Text style={styles.mainTitle}>{room.title}</Text>
 
-            {/* CASE 3: Result received — show result and buttons */}
-            {matchResult && !message && (
-                <View style={styles.resultContainer}>
-                    <Text style={styles.resultText}>
-                        🏁 Resultado:{" "}
-                        {matchResult === "Team_local"
-                            ? room.local_team_name
-                            : matchResult === "Team_away"
-                                ? room.away_team_name
-                                : "Empate"}
+                <View style={styles.teamsRow}>
+                    <View style={styles.teamBox}>
+                        <TeamShield
+                            colors={color1}
+                            width={80}
+                            height={96}
+                        />
+                        <Text style={styles.team}>{room.local_team_name}</Text>
+                    </View>
+
+                    <Text style={styles.vs}>VS</Text>
+
+                    <View style={styles.teamBox}>
+                        <TeamShield
+                            colors={color2}
+                            width={80}
+                            height={96}
+                        />
+                        <Text style={styles.team}>{room.away_team_name}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.gameDetails}>
+                    <Text style={styles.dateText}>
+                        {new Date(room.start_time).getUTCDate()}{" "}
+                        {new Date(room.start_time).toLocaleString("en-US", { month: "short", timeZone: "UTC" })}
                     </Text>
 
-                    {/* Accept / Reject buttons */}
-                    {!userDecision && !claimAvailable && !message && (
-                        <View style={styles.decisionButtons}>
-                            <TouchableOpacity
-                                style={[styles.decisionButton, { backgroundColor: "#28A745" }]}
-                                onPress={() => handleDesition("approve")}
-                            >
-                                <Text style={styles.decisionText}>Aceptar ✅</Text>
-                            </TouchableOpacity>
+                    <Text style={[styles.statusText, { color: activeBet ? "#00E676" : "#FF5252" }]}>
+                        {activeBet ? "Acuerdo activo" : "Esperando participantes"}
+                    </Text>
 
-                            <TouchableOpacity
-                                style={[styles.decisionButton, { backgroundColor: "#FF3B30" }]}
-                                onPress={() => handleDesition("reject")}
-                            >
-                                <Text style={styles.decisionText}>Rechazar ❌</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {/* Show user's decision */}
-                    {userDecision && !claimAvailable && (
-                        <Text style={styles.userDecision}>
-                            Has {userDecision === "approve" ? "aceptado" : "rechazado"} el resultado.
-                        </Text>
-                    )}
-
-                    {/* Claim button */}
-                    {claimAvailable && !message && (
-                        <TouchableOpacity
-                            style={[styles.decisionButton, { backgroundColor: "#007AFF" }]}
-                            onPress={() => handleClaim()}
-                        >
-                            <Text style={styles.decisionText}>Reclamar Recompensa 💰</Text>
-                        </TouchableOpacity>
-                    )}
+                    <Text style={styles.amountText}>Acuerdo por: {amount}</Text>
                 </View>
-            )}
-        </View>
+            </View>
+
+            {/* ACTION BOX */}
+            <View style={styles.actionBox}>
+                <Text style={styles.actionTitle}>
+                    {!betis && !message && !result ? "Selecciona tu opción" :
+                        result && !message ? "Registrar resultado del encuentro" :
+                            matchResult && !userDecision && !claimAvailable ? "Confirma el registro" :
+                                claimAvailable ? "Recibir resultado del acuerdo" :
+                                    canClaimRefund ? "Solicitar devolución" :
+                                        "Acciones disponibles"
+                    }
+                </Text>
+
+                {!betis && !message && (
+                    <>
+                        {["Team_local", "Tie", "Team_away"].map((option) => (
+                            <TouchableOpacity key={option} style={styles.actionButton} onPress={() => handlePredict(option)}>
+                                <Text style={styles.actionButtonText}>
+                                    {option === "Team_local"
+                                        ? room.local_team_name
+                                        : option === "Tie"
+                                            ? "Empate"
+                                            : room.away_team_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+
+                {result && !message && (
+                    <>
+                        {["Team_local", "Tie", "Team_away"].map((option) => (
+                            <TouchableOpacity key={option} style={styles.actionButton} onPress={() => handlesummit(option)}>
+                                <Text style={styles.actionButtonText}>
+                                    {option === "Team_local"
+                                        ? room.local_team_name
+                                        : option === "Tie"
+                                            ? "Empate"
+                                            : room.away_team_name}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </>
+                )}
+
+                {message && (
+                    <Text style={styles.infoMessage}>{message}</Text>
+                )}
+
+                {canClaimRefund && !message && (
+                    <TouchableOpacity style={styles.refundButton} onPress={() => handleRefund()}>
+                        <Text style={styles.actionButtonText}>Solicitar devolución</Text>
+                    </TouchableOpacity>
+                )}
+
+                {betis && !matchResult && !canClaimRefund && !message && !result && (
+                    <Text style={styles.waiting}>Esperando finalización del encuentro...</Text>
+                )}
+
+                {matchResult && !message && (
+                    <View style={styles.resultBox}>
+                        <Text style={styles.resultText}>
+                            Resultado registrado:{" "}
+                            {matchResult === "Team_local"
+                                ? room.local_team_name
+                                : matchResult === "Team_away"
+                                    ? room.away_team_name
+                                    : "Empate"}
+                        </Text>
+
+                        {!userDecision && !claimAvailable && (
+                            <View style={styles.decisionRow}>
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#00E676" }]}
+                                    onPress={() => handleDesition("approve")}
+                                >
+                                    <Text style={styles.decisionText}>Confirmar</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.decisionButton, { backgroundColor: "#FF5252" }]}
+                                    onPress={() => handleDesition("reject")}
+                                >
+                                    <Text style={styles.decisionText}>Revisar de nuevo</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {userDecision && !claimAvailable && (
+                            <Text style={styles.userDecisionText}>
+                                Has {userDecision === "approve" ? "confirmado" : "solicitado revisión"} del resultado.
+                            </Text>
+                        )}
+
+                        {claimAvailable && (
+                            <TouchableOpacity
+                                style={[styles.decisionButton, { backgroundColor: "#2196F3" }]}
+                                onPress={() => handleClaim()}
+                            >
+                                <Text style={styles.decisionText}>Recibir resultado del acuerdo</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
+            </View>
+
+            {/* VERTICAL DATA TABLE */}
+            <View style={styles.tableBox}>
+                <Text style={styles.tableTitle}>Detalles del acuerdo</Text>
+
+                <View style={styles.tableRow}>
+                    <Text style={styles.sectionLabel}>Participantes</Text>
+                    <Text style={styles.sectionValue}>
+                        {room.users.map(u => u.username).join(", ")}
+                    </Text>
+                </View>
+
+                <View style={styles.tableRow}>
+                    <Text style={styles.sectionLabel}>Seleccion</Text>
+                    <Text style={styles.sectionValue}>
+                        {betis ? (room.bet === "Team_local"
+                            ? room.local_team_name
+                            : room.bet === "Team_away"
+                                ? room.away_team_name
+                                : "Empate") : "Sin seleccionar"}
+                    </Text>
+                </View>
+
+                <View style={styles.tableRow}>
+                    <Text style={styles.sectionLabel}>Tarifa aplicada</Text>
+                    <Text style={styles.sectionValue}>
+                        {betis ? (rooms.colaterall ? (fee + " cop") : fee + " trust") : "Pendiente"}
+                    </Text>
+                </View>
+
+                <View style={styles.tableRow}>
+                    <Text style={styles.sectionLabel}>Resultado final</Text>
+                    <Text style={styles.sectionValue}>
+                        {rooms.amount_earned}
+                    </Text>
+                </View>
+            </View>
 
 
-        {
-            readytoSend && (
-                <ConfirmPrediction
-                    amount={rooms.min_amount}
-                    prediction={selected}
-                    teamName={teamSelected}
-                    teamLogo={teamSelectedlogo}
-                    onConfirm={(data) => {
-                        // this runs in your previous screen
-                        console.log("CONFIRMED DATA →", data);
-                        if (data.type == "usd") {
+            {
+                readytoSend && (
+                    <ConfirmPrediction
+                        amount={rooms.min_amount}
+                        prediction={selected}
+                        teamName={teamSelected}
+                        teamLogo={teamSelectedlogo}
+                        onConfirm={(data) => {
+                            // this runs in your previous screen
+                            console.log("CONFIRMED DATA →", data);
+                            if (data.type == "usd") {
 
-                            setColateral(true);
-                        } else {
-                            setColateral(false);
+                                collateral = true;
+                                console.log("ture")
+                            } else {
+                                collateral = false;
 
-                        }
-                        play(data.prediction);
-                        setreadytoSend(false);
+                            }
+                            play(data.prediction);
+                            setreadytoSend(false);
 
-                    }}
-                    onBack={() => {
-                        // go back
-                        setreadytoSend(false);
-                    }}
-                />
-            )
-        }
-    </View>)
+                        }}
+                        onBack={() => {
+                            // go back
+                            setreadytoSend(false);
+                        }}
+                    />
+                )
+            }
+        </ScrollView>)
 
 }
 
 
 
 const styles = StyleSheet.create({
+    tableRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginVertical: 10,
+    },
+
+    sectionLabel: {
+        color: "#00E676",
+        fontSize: 14,
+        fontWeight: "700",
+        width: "40%",     // label stays left
+    },
+
+    sectionValue: {
+        color: "#ccc",
+        fontSize: 14,
+        fontWeight: "500",
+        textAlign: "right",
+        width: "55%",     // values stay right
+        flexWrap: "wrap", // long text wraps if needed
+    },
+    mainTitle: {
+        color: "#fff",
+        fontSize: 22,
+        fontWeight: "800",
+        textAlign: "center",
+        marginBottom: 20,
+    },
+
+    tableBox: {
+        backgroundColor: "#111",
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#00E67622",
+        marginBottom: 40,
+    },
+
+    tableTitle: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 16,
+        textAlign: "center",
+    },
+
+
+
+    sectionItem: {
+        color: "#ccc",
+        fontSize: 13,
+        paddingLeft: 10,
+        marginBottom: 4,
+    },
     container: {
         flex: 1,
         backgroundColor: "#0D0D0D",
         padding: 16,
-        paddingTop: 60,
+    },
+    actionTitle: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "700",
+        marginBottom: 14,
+        textAlign: "center",
+        paddingVertical: 4,
+        borderBottomWidth: 1,
+        borderColor: "#00E67633",
     },
 
-    // 🔙 Back Button
     backButton: {
-        position: "absolute",
-        top: 20,
-        left: 16,
-        backgroundColor: "#1A1A1A",
-        borderRadius: 50,
         padding: 8,
-        borderWidth: 1,
-        borderColor: "#2D2D2D",
-        elevation: 4,
-        zIndex: 20,
-    },
-
-    // 🏠 Header
-    header: {
-        alignItems: "center",
-        marginBottom: 20,
-    },
-    roomTitle: {
-        fontSize: 22,
-        fontWeight: "700",
-        color: "#E9F5EC",
-        marginBottom: 6,
-        textAlign: "center",
-    },
-    status: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#4DA6FF",
-    },
-
-    // ⚽ Teams Section
-    teamsContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
         marginBottom: 10,
     },
-    team: {
-        flex: 1,
-        alignItems: "center",
-        maxWidth: 120,
+
+    gameHeader: {
+        backgroundColor: "#111",
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#00E67622",
+        marginBottom: 18,
     },
+
+    teamsRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+
+    teamBox: {
+        alignItems: "center",
+        width: "35%",
+    },
+
     logo: {
-        width: 70,
-        height: 70,
-        resizeMode: "contain",
+        width: 55,
+        height: 55,
+        borderRadius: 12,
         marginBottom: 6,
     },
-    teamName: {
+
+    team: {
+        color: "#fff",
         fontSize: 14,
         fontWeight: "600",
-        color: "#E9F5EC",
         textAlign: "center",
     },
+
     vs: {
+        color: "#00E676",
         fontSize: 16,
-        fontWeight: "700",
-        color: "#9CA3AF",
-        marginHorizontal: 10,
+        fontWeight: "bold",
     },
 
-    // 🕒 Match Info
-    time: {
-        fontSize: 13,
-        color: "#9CA3AF",
-        textAlign: "center",
-        marginVertical: 8,
+    gameDetails: {
+        marginTop: 12,
+        alignItems: "center",
     },
-    betStatus: {
+
+    dateText: {
+        color: "#aaa",
+        fontSize: 12,
+    },
+
+    statusText: {
         fontSize: 14,
-        color: "#4DA6FF",
-        textAlign: "center",
-        fontWeight: "600",
-        marginBottom: 12,
+        marginTop: 4,
+        fontWeight: "700",
     },
 
-    // 👥 Users Section
-    usersSection: {
+    amountText: {
+        color: "#00E676",
+        fontSize: 15,
+        fontWeight: "600",
+        marginTop: 8,
+    },
+
+    actionBox: {
+        backgroundColor: "#111",
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#00E67622",
         marginBottom: 20,
     },
-    sectionTitle: {
+
+    actionButton: {
+        backgroundColor: "#00E67622",
+        padding: 12,
+        borderRadius: 10,
+        marginBottom: 10,
+    },
+
+    actionButtonText: {
+        color: "#00E676",
+        fontWeight: "700",
+        textAlign: "center",
+    },
+
+    infoMessage: {
+        color: "#00E676",
+        fontWeight: "600",
+        textAlign: "center",
+    },
+
+    refundButton: {
+        backgroundColor: "#FFC10733",
+        padding: 12,
+        borderRadius: 10,
+        marginTop: 10,
+    },
+
+    waiting: {
+        color: "#aaa",
+        textAlign: "center",
+        marginTop: 10,
+    },
+
+    resultBox: {
+        marginTop: 10,
+    },
+
+    resultText: {
+        color: "#00E676",
         fontSize: 16,
         fontWeight: "700",
-        color: "#E9F5EC",
-        marginBottom: 10,
-    },
-    userCard: {
-        borderRadius: 8,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        marginRight: 10,
-        minWidth: 80,
-        alignItems: "center",
-    },
-    playedCard: {
-        backgroundColor: "#003B25",
-        borderWidth: 1,
-        borderColor: "#00E676",
-    },
-    notPlayedCard: {
-        backgroundColor: "#3A0000",
-        borderWidth: 1,
-        borderColor: "#FF5252",
-    },
-    userName: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#E9F5EC",
-    },
-    playedText: {
-        color: "#00E676",
-    },
-    notPlayedText: {
-        color: "#FF5252",
+        textAlign: "center",
     },
 
-    minAmountContainer: {
-        marginTop: 8,
-        marginBottom: 8,
-        alignItems: "center",
-    },
-    minAmountLabel: {
-        fontSize: 13,
-        color: "#9CA3AF",
-    },
-    minAmountValue: {
-        fontSize: 15,
-        color: "#4DA6FF",
-        fontWeight: "600",
-        marginTop: 2,
-    },
-
-    // 🎯 Options
-    optionsContainer: {
-        marginTop: 10,
-        alignItems: "center",
-    },
-    optionButton: {
-        backgroundColor: "#1A1A1A",
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: "#2D2D2D",
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-        marginVertical: 8,
-        width: "90%",
-        alignItems: "center",
-        elevation: 2,
-    },
-    optionText: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: "#E9F5EC",
-    },
-
-    // RESULT / DECISION
-    resultContainer: {
-        marginTop: 16,
-        alignItems: "center",
-    },
-    resultText: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#E9F5EC",
-        marginBottom: 10,
-    },
-
-    decisionButtons: {
+    decisionRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        width: "90%",
-        marginTop: 10,
+        justifyContent: "space-around",
+        marginTop: 12,
     },
 
     decisionButton: {
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        marginVertical: 8,
-        elevation: 2,
-    },
-    decisionText: {
-        color: "#FFF",
-        fontWeight: "600",
-        fontSize: 16,
-        textAlign: "center",
+        padding: 12,
+        borderRadius: 10,
+        width: "45%",
     },
 
-    waitingMessage: {
-        fontSize: 14,
-        color: "#9CA3AF",
-        marginTop: 10,
+    decisionText: {
+        color: "#fff",
         textAlign: "center",
+        fontWeight: "700",
     },
-    userDecision: {
-        marginTop: 10,
-        fontSize: 14,
-        color: "#4DA6FF",
-        fontWeight: "600",
+
+    userDecisionText: {
+        color: "#aaa",
         textAlign: "center",
+        marginTop: 8,
+    },
+
+    /** TABLE **/
+    tableBox: {
+        backgroundColor: "#111",
+        borderRadius: 14,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: "#00E67622",
+        marginBottom: 30,
+    },
+
+    tableTitle: {
+        color: "#fff",
+        fontSize: 16,
+        fontWeight: "700",
+        marginBottom: 12,
+    },
+
+    tableHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginBottom: 6,
+    },
+
+    col: {
+        width: "16%",
+        color: "#00E676",
+        fontSize: 12,
+        fontWeight: "700",
+    },
+
+    row: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        paddingVertical: 6,
+        borderBottomWidth: 1,
+        borderColor: "#222",
+    },
+
+    colValue: {
+        width: "16%",
+        color: "#ccc",
+        fontSize: 11,
     },
 });
 

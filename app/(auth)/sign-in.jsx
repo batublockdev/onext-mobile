@@ -3,11 +3,16 @@ import { Link, useRouter } from 'expo-router';
 import React from 'react';
 import useState from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Onboarding from '../../components/onboarding';
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Page() {
     const { signIn, setActive, isLoaded } = useSignIn()
     const router = useRouter()
     const [emailError, setEmailError] = React.useState(null);
+    const [Onboardingx, setOnboarding] = React.useState(true);
 
     const [passwordError, setPasswordError] = React.useState(null);
     const [globalError, setGlobalError] = React.useState(null);
@@ -54,71 +59,86 @@ export default function Page() {
             setGlobalError("Invalid email or password.");
         }
     }
+    if (Onboardingx) {
+        return <Onboarding onLoginPress={() => setOnboarding(false)} />
+    } else {
 
-    return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-            >
-                <Text style={styles.title}>Welcome Back</Text>
-                <Text style={styles.subtitle}>Sign in to continue</Text>
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+                <StatusBar style="light" backgroundColor="transparent" translucent />
 
-                {/* Global Error Box */}
-                {globalError && (
-                    <View style={styles.errorBox}>
-                        <Text style={styles.errorBoxText}>{globalError}</Text>
-                    </View>
-                )}
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                >
 
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter email"
-                        placeholderTextColor="#6B7280"
-                        autoCapitalize="none"
-                        value={emailAddress}
-                        onChangeText={(text) => {
-                            setEmailAddress(text);
-                            setEmailError(null);
-                            setGlobalError(null);
-                        }}
-                    />
-                    {emailError && <Text style={styles.errorText}>{emailError}</Text>}
+                    {/* Your UI */}
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter password"
-                        placeholderTextColor="#6B7280"
-                        secureTextEntry
-                        value={password}
-                        onChangeText={(text) => {
-                            setPassword(text);
-                            setPasswordError(null);
-                            setGlobalError(null);
-                        }}
-                    />
-                    {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
-                </View>
 
-                <TouchableOpacity style={styles.button} onPress={onSignInPress}>
-                    <Text style={styles.buttonText}>Sign In</Text>
-                </TouchableOpacity>
 
-                <View style={styles.signupRow}>
-                    <Text style={styles.signupText}>Don't have an account? </Text>
-                    <Link href="/sign-up">
-                        <Text style={styles.signupLink}>Sign Up</Text>
-                    </Link>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContainer}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <Text style={styles.title}>Welcome Back</Text>
+                        <Text style={styles.subtitle}>Sign in to continue</Text>
+
+                        {/* Global Error Box */}
+                        {globalError && (
+                            <View style={styles.errorBox}>
+                                <Text style={styles.errorBoxText}>{globalError}</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter email"
+                                placeholderTextColor="#6B7280"
+                                autoCapitalize="none"
+                                value={emailAddress}
+                                onChangeText={(text) => {
+                                    setEmailAddress(text);
+                                    setEmailError(null);
+                                    setGlobalError(null);
+                                }}
+                            />
+                            {emailError && <Text style={styles.errorText}>{emailError}</Text>}
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter password"
+                                placeholderTextColor="#6B7280"
+                                secureTextEntry
+                                value={password}
+                                onChangeText={(text) => {
+                                    setPassword(text);
+                                    setPasswordError(null);
+                                    setGlobalError(null);
+                                }}
+                            />
+                            {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
+                        </View>
+
+                        <TouchableOpacity style={styles.button} onPress={onSignInPress}>
+                            <Text style={styles.buttonText}>Sign In</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.signupRow}>
+                            <Text style={styles.signupText}>Don't have an account? </Text>
+                            <Link href="/sign-up">
+                                <Text style={styles.signupLink}>Sign Up</Text>
+                            </Link>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </SafeAreaView>
+
+        );
+    }
 }
+
 
 const styles = StyleSheet.create({
     container: {

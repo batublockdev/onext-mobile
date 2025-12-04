@@ -46,6 +46,8 @@ export default function SignUpScreen() {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
             setGlobalError("Error")
+            console.log(err)
+
         }
     }
 
@@ -73,12 +75,15 @@ export default function SignUpScreen() {
             } else {
                 // If the status is not complete, check why. User may need to
                 // complete further steps.
+                console.log(err)
                 setcodeError("Error")
+
 
             }
         } catch (err) {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
+            console.log(err)
             setcodeError("Error")
         }
     }

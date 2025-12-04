@@ -1,14 +1,18 @@
 import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { FlatList, ScrollView, Image, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from "react-native";
 import { teamLogos } from "../../components/teamLogos";
+import AppError from '../../components/e404';
 
 export default function Rooms() {
     const [rooms, setRooms] = useState([]);
     const [code, setCode] = useState("");
     const router = useRouter();
     const { user } = useUser();
+    const [refreshing, setRefreshing] = useState(false);
+    const [error404, setError404] = useState(false);
+
     const userId = user ? user.id : null;
     const statusStyles = {
         Ganada: {
@@ -37,6 +41,15 @@ export default function Rooms() {
             text: "Resultado",
         },
     };
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        fetchRooms();
+        setError404(false)
+        // Simulate fetching new data
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 1500);
+    }, []);
     const getStatusData = (status) => {
         return statusStyles[status] || statusStyles.pending;
     };
@@ -67,16 +80,21 @@ export default function Rooms() {
 
     // ✅ Example: Fetch existing rooms
     useEffect(() => {
+
         fetchRooms();
     }, []);
 
     const fetchRooms = async () => {
         try {
+            console.log("getting data")
+            setRooms([]);
+
             const res = await fetch(`http://192.168.1.2:8383/api/rooms?user_id=${userId}`);
             const data = await res.json();
             status(data);
         } catch (error) {
-            console.error("Error fetching rooms:", error);
+            console.log("Error fetching rooms:", error);
+            setError404(true);
         }
     };
     const status = async (data) => {
@@ -162,6 +180,7 @@ export default function Rooms() {
             }
             setRooms(prev => [...prev, a]);
 
+
         }
     };
     // ✅ Add or Join Room
@@ -242,18 +261,24 @@ export default function Rooms() {
 
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Available Rooms</Text>
+        error404 ? (
+            <AppError onRetry={() => onRefresh()} />
+        ) : (
+            <View style={styles.container}>
 
-            <FlatList
-                data={rooms}
-                renderItem={renderRoom}
-                keyExtractor={(item) => item.room_id.toString()}
-                contentContainerStyle={styles.list}
-            />
+                <Text style={styles.title}>Acuerdos</Text>
+                <ScrollView style={styles.container} refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }></ScrollView>
+                <FlatList
+                    data={rooms}
+                    renderItem={renderRoom}
+                    keyExtractor={(item) => item.room_id.toString()}
+                    contentContainerStyle={styles.list}
+                />
 
 
-        </View>
+            </View>)
     );
 }
 

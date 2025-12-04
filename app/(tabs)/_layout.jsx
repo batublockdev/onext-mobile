@@ -91,55 +91,56 @@ const TabsLayout = () => {
 
 
     return (<>{
-        !isLoading && (<Tabs
-            screenOptions={{
-                tabBarStyle: {
-                    backgroundColor: "#000703ff",
-                    borderTopColor: "#0E1F2F",
-                },
-
-                tabBarActiveTintColor: "#35D787",
-                tabBarActiveBackgroundColor: "#010302ff",
-                tabBarInactiveTintColor: "#777",
-                headerShown: false,
-            }}
-        >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: "Home",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="home" color={color} size={size} />
-                    ),
+        !isLoading && (
+            <Tabs
+                screenOptions={{
+                    tabBarStyle: {
+                        backgroundColor: "#000703ff",
+                        borderTopColor: "#0E1F2F",
+                    },
+                    tabBarActiveTintColor: "#35D787",
+                    tabBarInactiveTintColor: "#777",
                     headerShown: false,
-                    tabBarLabel: "Home",
+                    tabBarShowLabel: false,   // ← hides labels
                 }}
-            />
+            >
 
-            <Tabs.Screen
-                name="rooms"
-                options={{
-                    title: "Salones",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="people" color={color} size={size} />
-                    ),
-                    headerShown: false,
-                    tabBarLabel: "Salones",
-                }}
-            />
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="home-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
 
-            <Tabs.Screen
-                name="summiter"
-                options={{
-                    title: "Perfil",
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="person" color={color} size={size} />
-                    ),
-                    headerShown: false,
-                    tabBarLabel: "Summiter",
-                }}
-            />
-        </Tabs>)}
+                <Tabs.Screen
+                    name="rooms"
+                    options={{
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="people-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="summiter"
+                    options={{
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="person-circle-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="aboutus"
+                    options={{
+                        tabBarIcon: ({ color, size }) => (
+                            <Ionicons name="person-circle-outline" color={color} size={size} />
+                        ),
+                    }}
+                />
+            </Tabs>)}
         {
             isLoading && (
                 <PinVerification

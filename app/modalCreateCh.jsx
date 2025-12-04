@@ -83,7 +83,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                 setFriendCodeError("No se encontro");
 
             } else {
-                if (data[0].pub_key == userx[0].pub_key) {
+                if (userx[0]?.pub_key && data[0].pub_key == userx[0].pub_key) {
                     setFriendCodeError("Usa un codico dintisto al tuyo");
                     return
 
@@ -141,41 +141,12 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
         try {
             const description = `${parsedMatch.local_team_name} vs ${parsedMatch.away_team_name}`;
-            const endTime = Math.floor(new Date(parsedMatch.end_time).getTime() / 1000);
-            const startTime = Math.floor(new Date(parsedMatch.start_time).getTime() / 1000);
+            const end = Math.floor(new Date(parsedMatch.end_time).getTime() / 1000);
+            const start = Math.floor(new Date(parsedMatch.start_time).getTime() / 1000);
 
+            console.log("Start in Colombia:", start.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
+            console.log("End in Colombia:", end.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
 
-
-
-
-            const nowInColombia = new Date().toLocaleString("es-CO", {
-                timeZone: "America/Bogota",
-            });
-            console.log(nowInColombia);
-            // 1️⃣ Current date in UTC
-            const nowUTC = new Date();
-
-            // 2️⃣ Display it as Colombia local time
-            console.log("Now in Colombia:", nowUTC.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
-            //1760212800u32
-            //1760212800u32
-            // 3️⃣ Add one hour (3600 seconds)
-            const plusOne7minUTC = new Date(nowUTC.getTime() + 220 * 1000);
-            const plusOne14minUTC = new Date(nowUTC.getTime() + 840 * 1000);
-            console.log(plusOne14minUTC);
-            console.log("1760212800");
-            const timeEndstampForStellar = Math.floor(plusOne14minUTC.getTime() / 1000);
-
-            const timeStartstampForStellar = Math.floor(plusOne7minUTC.getTime() / 1000);
-            console.log(timeStartstampForStellar);
-            const nowUTC2 = new Date(plusOne14minUTC);
-            const nowUTC3 = new Date(plusOne7minUTC);
-
-
-            // 2️⃣ Display it as Colombia local time
-            console.log("Now in Colombia2:", nowUTC2.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
-            // 4️⃣ Display one hour later, still in Colombia time
-            console.log("One hour later (Colombia):", plusOne14minUTC.toLocaleString("es-CO", { timeZone: "America/Bogota" }));
 
             const id_game = parsedMatch.match_id.toString();
             console.log("Match ID:", id_game);
@@ -189,10 +160,10 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
             const game = {
                 description,
-                timeEndstampForStellar,
+                end,
                 id_game,
                 leage: "20",
-                timeStartstampForStellar,
+                start,
                 team_away,
                 team_local
             };
@@ -216,7 +187,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             setMsgLoading("Enviando a la blockchain");
 
             try {
-                await setGame(description, timeEndstampForStellar, id_game, "20", timeStartstampForStellar, team_away, team_local, sig, keypairUser);
+                await setGame(description, end, id_game, "20", start, team_away, team_local, sig, keypairUser);
             } catch (err) {
                 const { reason, code } = parseContractError(err);
                 if (code === 210) {
@@ -256,7 +227,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: dataid.nextRoomId, start_time: nowUTC3, finish_time: nowUTC2, title: description, active: false, id_game: parsedMatch.match_id, minBet: usd, users: users }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: dataid.nextRoomId, start_time: parsedMatch.start_time, finish_time: parsedMatch.end_time, title: description, active: false, id_game: parsedMatch.match_id, minBet: usd, users: users }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -351,7 +322,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     <Text style={styles.title}>{parsedMatch.local_team_name} vs {parsedMatch.away_team_name}</Text>
 
                     {/* Friend code input */}
-                    <Text style={styles.label}>Friend Code</Text>
+                    <Text style={styles.label}>Código de invitación</Text>
                     <View style={styles.row}>
                         <TextInput
                             style={[
@@ -359,7 +330,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                                 friendCodeError && styles.inputError
                             ]}
                             value={friendCode}
-                            placeholder="Enter friend code"
+                            placeholder="Ingresa el código"
                             placeholderTextColor="#999"
                             onChangeText={(value) => {
                                 setFriendCode(value);
@@ -367,7 +338,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                             }}
                         />
                         <TouchableOpacity style={styles.addBtn} onPress={handleAddFriend}>
-                            <Text style={styles.addBtnTxt}>Add</Text>
+                            <Text style={styles.addBtnTxt}>Agregar</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -376,7 +347,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     )}
 
                     {/* Friends list */}
-                    <Text style={styles.label}>Friends Added</Text>
+                    <Text style={styles.label}>Participantes agregados</Text>
                     {/* Friends list */}
                     <FlatList
                         data={friends}
@@ -396,12 +367,12 @@ export default function BetRoomModal({ visible, onClose, game }) {
                             </View>
                         )}
                         ListEmptyComponent={
-                            <Text style={styles.empty}>No friends added yet</Text>
+                            <Text style={styles.empty}>Aún no hay participantes</Text>
                         }
                     />
 
                     {/* Amount box */}
-                    <Text style={styles.label}>Amount per person</Text>
+                    <Text style={styles.label}>Aporte por participante</Text>
                     <TextInput
                         style={styles.input}
                         value={amount}
@@ -427,7 +398,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                         onPress={handleCreateRoom}
                         disabled={(friends.length == 0 || !minBet || !keypair)}
                     >
-                        <Text style={styles.createBtnTxt}>Crear salon</Text>
+                        <Text style={styles.createBtnTxt}>Crear sala</Text>
                     </TouchableOpacity>
 
                 </View>

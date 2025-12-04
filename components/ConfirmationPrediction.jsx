@@ -63,7 +63,7 @@ export default function ConfirmPrediction({
                 <Ionicons name="chevron-back" size={28} color="#35D787" />
             </TouchableOpacity>
             {/* Top Label */}
-            <Text style={styles.label}>Prediction</Text>
+
 
             {/* Team */}
             <View style={styles.teamContainer}>
@@ -98,16 +98,17 @@ export default function ConfirmPrediction({
 
             </View>
             <View style={styles.feeBox}>
-                <Text style={styles.feeTitle}>Incentivo de Honestidad</Text>
+                <Text style={styles.feeTitle}>Tarifa de Honestidad</Text>
                 <Text style={styles.feeText}>
-                    Esta tarifa fomenta el comportamiento honesto.
-                    Si ambos usuarios actúan con honestidad, la tarifa te será devuelta.
-                    Si uno de los usuarios actúa de manera deshonesta, la tarifa sera aplicada como castigo.
+                    Esta tarifa existe para promover la participación responsable dentro del sistema.
+                    Se reembolsa completamente siempre que los usuarios registren la información correcta
+                    y sigan las reglas del proceso. Solo se retiene cuando se detecta incumplimiento
+                    o uso inadecuado de la plataforma.
                 </Text>
             </View>
 
             {/* Total */}
-            <View style={{ alignItems: "center", marginVertical: 25 }}>
+            <View style={{ alignItems: "center", marginVertical: 8 }}>
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.totalAmount}>{formatCOP(total)}</Text>
 

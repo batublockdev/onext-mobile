@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSignOut } from "../(auth)/signout";
 import MatchesScreen from '../../components/game';
+import AppError from '../../components/e404';
 import MatchCard from '../../components/MatchCard';
 import { useApp } from '../contextUser';
 import BetRoomModal from '../modalCreateCh';
@@ -17,8 +18,11 @@ const HomeScreen = () => {
     const [loadingMessage, setLoadingMessage] = useState('...');
     const [reason, setReason] = useState(null);
     const [myMachesvar, setmyMachesvar] = useState([]);
+    const [myMachesSupremevar, setmyMachesSupremevar] = useState([]);
+
     const [idcode, setidcode] = useState("N/A");
     const [position, setposition] = useState("0");
+    const [error404, setError404] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [dataModalVisible, setdataModalVisible] = useState(false);
@@ -45,19 +49,7 @@ const HomeScreen = () => {
 
     }, []);
     useEffect(() => {
-        if (userx != null) {
-            if (!userx?.[0]?.id_app) {
-                setidcode("registro sin completar")
-            } else {
-                setidcode(userx[0].id_app)
-                setposition(userx[0].position)
 
-
-                supremeCheck()
-
-
-            }
-        }
 
     }, [userx]);
     async function getUsdToCop(usd) {
@@ -82,12 +74,29 @@ const HomeScreen = () => {
             const data = await res.json();
             //console.log("my rooms:", data);
             myMaches(data);
+            setError404(false);
+            if (userx != null) {
+                if (!userx?.[0]?.id_app) {
+                    setidcode("registro sin completar")
+                } else {
+                    setidcode(userx[0].id_app)
+                    setposition(userx[0].position)
+
+
+                    supremeCheck()
+
+
+                }
+            }
+
         } catch (error) {
-            console.error("Error fetching rooms:", error);
+            setError404(true)
+
         }
     };
 
     const supremeCheck = async () => {
+        setmyMachesvar([])
         try {
             const res = await fetch(`http://192.168.1.2:8383/api/selectsupreme`);
             const data = await res.json();
@@ -102,8 +111,12 @@ const HomeScreen = () => {
                 if (result[i].honest1 !== userx[0].pub_key && result[i].honest2 !== userx[0].pub_key) {
                     if (userx[0].position == 1 || userx[0].position == 2) {
 
-                        console.log("need to claim assestxxxxxxx")
+                        console.log("need to claim assestxxxxxxx", result[i])
+                        const endTime = new Date(result[i].end_time);
+                        const now = new Date();
 
+                        const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
+                        // poner if once we fix the adding time in db if (now < limitSupreme) {
                         const a = {
                             roomid: result[i].game_id,
                             match_id: result[i].game_id,
@@ -120,10 +133,10 @@ const HomeScreen = () => {
                             honest2: result[i].honest2,
                             adm: result[i].adm,
                             externalUser: result[i].externalUser,
-                            result: result[i].result,
                             gameState: "supreme"
                         }
                         setmyMachesvar(prev => [...prev, a]);
+
                     }
                 } else if (result[i].distributed == true && (((result[i].honest1_claim == false || !result[i].honest1_claim) && result[i].honest1 == userx[0].pub_key) || ((result[i].honest2_claim == false || !result[i].honest2_claim) && result[i].honest2 == userx[0].pub_key))) {
                     console.log("need to claim assest")
@@ -138,7 +151,7 @@ const HomeScreen = () => {
                         team2: result[i].away_team_name,
                         logo1: result[i].local_team_logo,
                         logo2: result[i].away_team_logo,
-                        reason: "Resultado",
+                        reason: "Cobrar",
                         honest1: result[i].honest1,
                         honest2: result[i].honest2,
                         adm: result[i].adm,
@@ -151,8 +164,9 @@ const HomeScreen = () => {
                 }
             }
 
+
         } catch (error) {
-            console.error("Error :", error);
+            console.log("Error :", error);
         }
 
     }
@@ -174,7 +188,6 @@ const HomeScreen = () => {
 
     }
     const myMaches = async (rooms) => {
-
         const now = new Date();
         for (let i = 0; i < rooms.length; i++) {
             const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
@@ -189,6 +202,8 @@ const HomeScreen = () => {
 
             if (now > limitSupreme && data[0].user_bet != "false" && !data[0].result && data[0].active && !data[0].user_claim) {
                 console.log("no result so claim refund");
+                let usd = await getUsdToCop(parseFloat((data[0].min_amount) / 10_000_000));
+                let formattedUsd = await formatCOP(usd);
                 const a = {
                     roomid: rooms[i].room_id,
                     type: 0,
@@ -201,15 +216,15 @@ const HomeScreen = () => {
                     logo1: rooms[i].local_team_logo,
                     logo2: rooms[i].away_team_logo,
                     reason: "Devolución",
-                    howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
-                        .toFixed(6)
-                        .replace(/\.?0+$/, "")} usd`,
+                    howmuch: formattedUsd,
                     gameState: "cobrar"
                 }
                 setmyMachesvar(prev => [...prev, a]);
 
             } else
                 if (now > limitStart && data[0].user_bet != "false" && !data[0].active && !data[0].user_claim) {
+                    let usd = await getUsdToCop(parseFloat((data[0].min_amount) / 10_000_000));
+                    let formattedUsd = await formatCOP(usd);
                     console.log("no active game after starting");
                     const a = {
                         roomid: rooms[i].room_id,
@@ -223,14 +238,12 @@ const HomeScreen = () => {
                         logo1: rooms[i].local_team_logo,
                         logo2: rooms[i].away_team_logo,
                         reason: "Devolución",
-                        howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
-                            .toFixed(6)
-                            .replace(/\.?0+$/, "")} usd`,
+                        howmuch: formattedUsd,
                         gameState: "cobrar"
                     }
                     setmyMachesvar(prev => [...prev, a]);
                 } else
-                    if (now > endTime && data[0].user_bet != "false" && data[0].active && (!data[0].result || data[0].user_assest == "false")) {
+                    if (limit > now && now > endTime && data[0].user_bet != "false" && data[0].active && (!data[0].result || data[0].user_assest == "false")) {
                         console.log("subir resultado");
                         const a = {
                             roomid: rooms[i].room_id,
@@ -299,6 +312,7 @@ const HomeScreen = () => {
 
         }
 
+
     }
     useEffect(() => {
         UserBalance();
@@ -364,7 +378,9 @@ const HomeScreen = () => {
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
-
+        setmyMachesvar([]);
+        fetchRooms();
+        UserBalance();
         // Simulate fetching new data
         setTimeout(() => {
             setRefreshing(false);
@@ -372,57 +388,62 @@ const HomeScreen = () => {
     }, []);
 
     return (
-        <ScrollView style={styles.container} refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+        error404 ? (
+            <AppError onRetry={() => onRefresh()} />
+        ) : (
+            <ScrollView style={styles.container} refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }>
 
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push({
-                    pathname: "/summiter",
-                })} style={{ padding: 10, flexDirection: "row", alignItems: "center" }}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.push({
+                        pathname: "/summiter",
+                    })} style={{ padding: 10, flexDirection: "row", alignItems: "center" }}>
 
-                    <View style={{ marginLeft: 10 }}>
+                        <View style={{ marginLeft: 10 }}>
 
-                        <Text style={styles.username}>{user.firstName}</Text>
-                        <Text style={styles.userId}>ID: {idcode}</Text>
+                            <Text style={styles.username}>{user.firstName}</Text>
+                            <Text style={styles.userId}>ID: {idcode}</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.headerIcons}>
+                        <Text style={styles.icon}>{position}</Text>
                     </View>
-                </TouchableOpacity>
-
-                <View style={styles.headerIcons}>
-                    <Text style={styles.icon}>{position}</Text>
                 </View>
-            </View>
 
-            {/* Total Bets */}
-            <View style={styles.totalBox}>
-                <Text style={styles.totalLabel}>Saldo</Text>
-                <Text style={styles.totalValue}>{USDCBalance}</Text>
-                <Text style={styles.totalChange}>{TRUSTBalance + " Trust"}</Text>
-            </View>
+                {/* Total Bets */}
+                <View style={styles.totalBox}>
+                    <Text style={styles.totalLabel}>Saldo</Text>
+                    <Text style={styles.totalValue}>{USDCBalance}</Text>
+                    <Text style={styles.totalChange}>{TRUSTBalance + " Trust"}</Text>
+                </View>
 
 
-            {/* My Matches */}
-            <Section title="My Matches">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
-                    {myMachesvar.map((m) => (
-                        <MatchCard goToGameDetail={goGameResult} key={m.roomid} data={m} />
-                    ))}
-                </ScrollView>
+                {/* My Matches */}
+                <Section title="My Matches">
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
+                        {myMachesvar.map((m) => (
+                            <MatchCard goToGameDetail={goGameResult} key={m.roomid} data={m} />
+                        ))}
+                    </ScrollView>
 
-            </Section>
+                </Section>
 
-            {/* Watchlist */}
-            <Section title="Watchlist">
-                <MatchesScreen onOpen={(id, data) => { console.log(id, data); setModalVisible(true), setdataModalVisible(data) }} />
-            </Section>
-            <BetRoomModal
-                visible={modalVisible}
-                onClose={() => setModalVisible(false)}
-                game={dataModalVisible}
-            />
+                {/* Watchlist */}
+                <Section title="Watchlist">
+                    <MatchesScreen onOpen={(id, data) => { console.log(id, data); setModalVisible(true), setdataModalVisible(data) }} />
+                </Section>
+                <BetRoomModal
+                    visible={modalVisible}
+                    onClose={() => setModalVisible(false)}
+                    game={dataModalVisible}
+                />
 
-        </ScrollView >
+            </ScrollView >
+        )
+
 
     );
 

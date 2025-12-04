@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Share, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-
+import DeleteAccountModal from "../../components/DeleteAccountModal";
 import { useSignOut } from "../(auth)/signout";
 import PrivateKeyImport from "../../components/importprivatekey";
 import { useApp } from '../contextUser';
+
 export default function ProfileScreen() {
     const { userx, setUserx, setKeypair } = useApp();
     const [importPkey, setImport] = useState(false);
@@ -15,7 +16,7 @@ export default function ProfileScreen() {
     const userId = userx ? userx[0]?.id_app : 'N/A';
     const { signOutUser } = useSignOut();
     const router = useRouter();
-
+    const [modalVisible, setModalVisible] = useState(false);
     useEffect(() => {
         console.log("User ID in Rooms:", !userx ? userx[0]?.position : "no");
         if (userx != null) {
@@ -27,6 +28,48 @@ export default function ProfileScreen() {
         }
 
     }, []);
+    const handleDeleteAccount = async () => {
+        fetch(`https://api.clerk.com/v1/users/${userx[0].user_id}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer sk_test_in2wjAnwP0hWQs6NFcMlmOgtoaqQFKlfrUkKTwinkM`,
+                "Content-Type": "application/json",
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("User deleted:", data);
+            })
+            .catch(error => {
+                console.error("Failed to delete user:", error);
+            });
+        try {
+
+            const response = await fetch('http://192.168.1.2:8383/deleteUser', {
+                method: 'POST', // must be POST to send body
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id_user: userx[0].user_id }), // send your user ID here
+            });
+
+            if (!response.ok) {
+                console.error('Server responded with error:', response.status);
+                return;
+            }
+            const data = await response.json();
+            console.log('User data deleted successfully:', data);
+
+
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
+    }
     const handleShare = async () => {
         try {
             await Share.share({
@@ -48,11 +91,45 @@ export default function ProfileScreen() {
     } else {
         return (
             <View style={styles.container}>
+                {/* Modal */}
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalVisible}
+                    onRequestClose={() => setModalVisible(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Estas seguro?</Text>
+                            <Text style={styles.modalText}>
+                                Esta accion eliminara permanentemente tu cuenta.
+                            </Text>
+
+                            <View style={styles.buttonRow}>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.cancelButton]}
+                                    onPress={() => setModalVisible(false)}
+                                >
+                                    <Text style={styles.cancelText}>Cancelar</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.deleteConfirmButton]}
+                                    onPress={handleDeleteAccount}
+                                >
+                                    <Text style={styles.deleteConfirmText}>Eliminar</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
 
                 {/* --- Profile Header --- */}
                 <View style={styles.profileHeader}>
                     <View style={styles.profileCircle}>
-                        <Text style={{ color: "white", fontSize: 26 }}>{username ? username.substring(0, 1) : "?"}</Text>
+                        <Text style={{ color: "white", fontSize: 26 }}>
+                            {username ? username.substring(0, 1) : "?"}
+                        </Text>
                     </View>
 
                     <Text style={styles.username}>{username}</Text>
@@ -74,12 +151,10 @@ export default function ProfileScreen() {
                         backgroundColor="transparent"
                     />
 
-
-
                     <Text style={styles.walletText}>{walletAddress}</Text>
 
                     <Text style={styles.warningText}>
-                        Your wallet address will change on every receipt
+                        Este identificador puede actualizarse periódicamente para mayor seguridad.
                     </Text>
 
                     {/* Actions */}
@@ -91,22 +166,71 @@ export default function ProfileScreen() {
                         <TouchableOpacity style={styles.actionBtn}>
                             <Ionicons name="share-outline" size={22} color="#35D787" />
                         </TouchableOpacity>
-
                     </View>
                 </View>
+                {/* Row for both buttons */}
+                <View style={styles.accountRow}>
 
-                {/* LOG OUT */}
-                <TouchableOpacity style={styles.logoutBtn} onPress={() => { signOutUser(); setKeypair(null); }}>
-                    <Text style={{ color: "white", fontWeight: "bold" }}>Log Out</Text>
-                </TouchableOpacity>
+                    {/* Log Out */}
+                    <TouchableOpacity
+                        style={styles.logoutBtn}
+                        onPress={() => { signOutUser(); setKeypair(null); }}
+                    >
+                        <Text style={styles.logoutTxt}>Cerrar sesión</Text>
+                    </TouchableOpacity>
+
+                    {/* Delete Account */}
+                    <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Text style={styles.deleteTxt}>Eliminar cuenta</Text>
+                    </TouchableOpacity>
+
+                </View>
 
             </View>
+
         );
     }
 
 }
 
 const styles = StyleSheet.create({
+    deleteButton: {
+        backgroundColor: "#FF4D4F",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+    },
+    deleteButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContainer: {
+        width: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 10,
+        padding: 20,
+        alignItems: "center",
+    },
+    modalTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+    modalText: { fontSize: 15, textAlign: "center", marginBottom: 20 },
+    buttonRow: { flexDirection: "row", justifyContent: "space-between" },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        marginHorizontal: 5,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    cancelButton: { backgroundColor: "#ccc" },
+    deleteConfirmButton: { backgroundColor: "#FF4D4F" },
+    cancelText: { color: "#000", fontWeight: "bold" },
+    deleteConfirmText: { color: "#fff", fontWeight: "bold" },
 
     /* MAIN */
     container: {
@@ -198,14 +322,38 @@ const styles = StyleSheet.create({
         borderColor: "#2A323D",
     },
 
-    /* LOGOUT */
+
+
+    accountRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 20,
+        paddingHorizontal: 10,
+    },
+
     logoutBtn: {
-        marginTop: 40,
-        backgroundColor: "#FF6A6A",
-        padding: 15,
-        width: "90%",
-        borderRadius: 12,
-        alignItems: "center"
+        backgroundColor: "#35D787",
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+    },
+
+    logoutTxt: {
+        color: "white",
+        fontWeight: "bold",
+    },
+
+    deleteBtn: {
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+    },
+
+    deleteTxt: {
+        color: "#5f1e1eff",
+        opacity: 0.7,        // menos resaltado
+        fontWeight: "600",   // menos fuerte que bold
     },
 });
 
