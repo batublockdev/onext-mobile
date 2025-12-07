@@ -1,9 +1,10 @@
 import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { teamLogos } from "./teamLogos";
-
+import { teamColorsByID } from "./TeamColor";
+import TeamShield from "./TeamShield";
 export default function MatchCard({ data, goToGameDetail }) {
-    const { roomid, match_id, result, type, league, week, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed } = data;
+    const { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed } = data;
     const themes = {
         cobrar: {
             bg: "#ff8888ff",
@@ -38,13 +39,16 @@ export default function MatchCard({ data, goToGameDetail }) {
     const theme = themes[gameState] || themes.upcoming;
 
     return (
-        <TouchableOpacity onPress={() => goToGameDetail(roomid, match_id, result, type, league, week, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed)} style={[styles.card, { backgroundColor: theme.bg }]}>
+        <TouchableOpacity onPress={() => goToGameDetail(roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed)} style={[styles.card, { backgroundColor: theme.bg }]}>
             <Text style={[styles.league, { color: theme.sub }]}>{league}</Text>
             <Text style={[styles.week, { color: theme.sub }]}>Week {week}</Text>
 
             <View style={styles.row}>
-                <Image source={teamLogos[logo1]}
-                    style={styles.teamLogo} />
+                <TeamShield
+                    colors={teamColorsByID[localid].colors}
+                    width={45}
+                    height={61}
+                />
 
                 <View style={styles.center}>
                     <Text style={[styles.score, { color: theme.score }]}>
@@ -59,9 +63,11 @@ export default function MatchCard({ data, goToGameDetail }) {
                         </View>
                     )}
                 </View>
-
-                <Image source={teamLogos[logo2]}
-                    style={styles.teamLogo} />
+                <TeamShield
+                    colors={teamColorsByID[awayid].colors}
+                    width={45}
+                    height={61}
+                />
             </View>
 
             <View style={styles.rowNames}>

@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { FlatList, ScrollView, Image, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from "react-native";
 import { teamLogos } from "../../components/teamLogos";
 import AppError from '../../components/e404';
-
+import { teamColorsByID } from "../../components/TeamColor";
+import TeamShield from "../../components/TeamShield";
 export default function Rooms() {
     const [rooms, setRooms] = useState([]);
     const [code, setCode] = useState("");
@@ -167,6 +168,8 @@ export default function Rooms() {
             let profitCop = await getUsdToCop(data[i].min_amount / 10000000);
 
             const a = {
+                teamColor1: teamColorsByID[data[i].local_team_id].colors,
+                teamColor2: teamColorsByID[data[i].away_team_id].colors,
                 away_team_logo: data[i].away_team_logo,
                 team1: data[i].away_team_name,
                 fecha: 15,
@@ -224,12 +227,20 @@ export default function Rooms() {
             {/* TEAMS */}
             <View style={styles.teamsRow}>
                 <View style={styles.team}>
-                    <Image source={teamLogos[item.local_team_logo]} style={styles.logo} />
+                    <TeamShield
+                        colors={item.teamColor1}
+                        width={35}
+                        height={41}
+                    />
                     <Text style={styles.teamName} numberOfLines={1}>{item.team2.substring(0, 7)}</Text>
                 </View>
 
                 <View style={styles.team}>
-                    <Image source={teamLogos[item.away_team_logo]} style={styles.logo} />
+                    <TeamShield
+                        colors={item.teamColor2}
+                        width={35}
+                        height={41}
+                    />
                     <Text style={styles.teamName} numberOfLines={1}>{item.team1.substring(0, 7)}</Text>
                 </View>
             </View>

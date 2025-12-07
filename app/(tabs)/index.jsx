@@ -116,31 +116,38 @@ const HomeScreen = () => {
                         const now = new Date();
 
                         const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
-                        // poner if once we fix the adding time in db if (now < limitSupreme) {
-                        const a = {
-                            roomid: result[i].game_id,
-                            match_id: result[i].game_id,
-                            result: result[i].result,
-                            type: 1,
-                            league: "Supreme Court",
-                            week: result[i].fecha,
-                            team1: result[i].local_team_name,
-                            team2: result[i].away_team_name,
-                            logo1: result[i].local_team_logo,
-                            logo2: result[i].away_team_logo,
-                            reason: "Resultado",
-                            honest1: result[i].honest1,
-                            honest2: result[i].honest2,
-                            adm: result[i].adm,
-                            externalUser: result[i].externalUser,
-                            gameState: "supreme"
+                        const voteLimit = new Date(endTime.getTime() + 18000 * 1000);
+
+                        if ((voteLimit > now && result[i].allusersvoted) && (now < limitSupreme)) {
+                            const a = {
+                                localid: result[i].local_team_id,
+                                awayid: result[i].away_team_id,
+                                roomid: result[i].game_id,
+                                match_id: result[i].game_id,
+                                result: result[i].result,
+                                type: 1,
+                                league: "Supreme Court",
+                                week: result[i].fecha,
+                                team1: result[i].local_team_name,
+                                team2: result[i].away_team_name,
+                                logo1: result[i].local_team_logo,
+                                logo2: result[i].away_team_logo,
+                                reason: "Resultado",
+                                honest1: result[i].honest1,
+                                honest2: result[i].honest2,
+                                adm: result[i].adm,
+                                externalUser: result[i].externalUser,
+                                gameState: "supreme"
+                            }
+                            setmyMachesvar(prev => [...prev, a]);
                         }
-                        setmyMachesvar(prev => [...prev, a]);
 
                     }
                 } else if (result[i].distributed == true && (((result[i].honest1_claim == false || !result[i].honest1_claim) && result[i].honest1 == userx[0].pub_key) || ((result[i].honest2_claim == false || !result[i].honest2_claim) && result[i].honest2 == userx[0].pub_key))) {
-                    console.log("need to claim assest")
+                    console.log("need to claim assest", result[i])
                     const a = {
+                        localid: result[i].local_team_id,
+                        awayid: result[i].away_team_id,
                         roomid: result[i].game_id,
                         match_id: result[i].game_id,
                         result: result[i].result,
@@ -170,11 +177,11 @@ const HomeScreen = () => {
         }
 
     }
-    const goGameResult = async (roomid, match_id, result, type, league, week, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed) => {
+    const goGameResult = async (roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed) => {
         if (type == 1) {
             router.push({
                 pathname: "/GameDatail",
-                params: { match_id, result, type, league, week, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed },
+                params: { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed },
             });
         } else if (type == 0) {
             router.push({
@@ -184,7 +191,7 @@ const HomeScreen = () => {
                 },
             });
         }
-        console.log("go to game detail", roomid);
+        console.log("go to game detail", type);
 
     }
     const myMaches = async (rooms) => {
@@ -197,7 +204,6 @@ const HomeScreen = () => {
             console.log(data[0].user_assest)
             const endTime = new Date(data[0].finish_time);
             const limit = new Date(endTime.getTime() + 18000 * 1000);
-            const limitStart = new Date(endTime.getTime() + 600 * 1000);
             const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
 
             if (now > limitSupreme && data[0].user_bet != "false" && !data[0].result && data[0].active && !data[0].user_claim) {
@@ -205,6 +211,8 @@ const HomeScreen = () => {
                 let usd = await getUsdToCop(parseFloat((data[0].min_amount) / 10_000_000));
                 let formattedUsd = await formatCOP(usd);
                 const a = {
+                    localid: rooms[i].local_team_id,
+                    awayid: rooms[i].away_team_id,
                     roomid: rooms[i].room_id,
                     type: 0,
 
@@ -222,11 +230,13 @@ const HomeScreen = () => {
                 setmyMachesvar(prev => [...prev, a]);
 
             } else
-                if (now > limitStart && data[0].user_bet != "false" && !data[0].active && !data[0].user_claim) {
+                if (now > endTime && data[0].user_bet != "false" && !data[0].active && !data[0].user_claim) {
                     let usd = await getUsdToCop(parseFloat((data[0].min_amount) / 10_000_000));
                     let formattedUsd = await formatCOP(usd);
                     console.log("no active game after starting");
                     const a = {
+                        localid: rooms[i].local_team_id,
+                        awayid: rooms[i].away_team_id,
                         roomid: rooms[i].room_id,
                         type: 0,
 
@@ -246,6 +256,8 @@ const HomeScreen = () => {
                     if (limit > now && now > endTime && data[0].user_bet != "false" && data[0].active && (!data[0].result || data[0].user_assest == "false")) {
                         console.log("subir resultado");
                         const a = {
+                            localid: rooms[i].local_team_id,
+                            awayid: rooms[i].away_team_id,
                             roomid: rooms[i].room_id,
                             type: 0,
 
@@ -289,6 +301,8 @@ const HomeScreen = () => {
 
                             } if (show) {
                                 const a = {
+                                    localid: rooms[i].local_team_id,
+                                    awayid: rooms[i].away_team_id,
                                     roomid: rooms[i].room_id,
                                     type: 0,
 

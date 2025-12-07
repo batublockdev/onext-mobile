@@ -256,18 +256,14 @@ export default function BetRoomModal({ visible, onClose, game }) {
         } catch (error) {
             setMsgLoading("Algo no salio bien");
 
-            if (error == "Invalid password or corrupted keystore") {
-                setStatus("error");
-                setReason(reason);
-            } else {
-                console.error("Error creating room:", error);
-                const { reason, code } = parseContractError(error);
-                const errorMsg =
-                    error.message || error.reason || "An unexpected error occurred.";
+            console.error("Error creating room:", error);
+            const { reason, code } = parseContractError(error);
+            const errorMsg =
+                error.message || error.reason || "An unexpected error occurred.";
 
-                setStatus("error");
-                setReason(errorMsg);
-            }
+            setStatus("error");
+            setReason(errorMsg);
+
 
         }
     };

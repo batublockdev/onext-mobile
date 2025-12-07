@@ -8,7 +8,8 @@ import PinVerification from "../components/pin";
 import { teamLogos } from "../components/teamLogos";
 import { useApp } from "./contextUser";
 import LoadingOverlay from "../components/loadingCompnent";
-
+import TeamShield from "../components/TeamShield";
+import { teamColorsByID } from "../components/TeamColor";
 const {
     setResult_supremCourt,
     AssestResult_supremCourt,
@@ -79,7 +80,6 @@ export default function GameDetails({ }) {
             setLoadingMessage("Reclamando recompensa")
 
             const keypairUser = keypair;
-            //async function claim(address, setting, claimType, keypairUser)
             const value = await claim(userx[0].pub_key, match.match_id, "Supreme", keypairUser);
             console.log("Resultado claim: ", value)
             const valueItems = value._value;
@@ -90,16 +90,16 @@ export default function GameDetails({ }) {
             const trust = BigInt(valTrust.lo._value);
             let claim1 = false;
             let claim2 = false;
-            if (match.honest1 == userx[0].pub_key && match.honest1_cliam == false) {
+            if (match.honest1 == userx[0].pub_key && (match.honest1_cliam == false || !match.honest1_cliam)) {
                 claim1 = true;
-            } else if (match.honest2 == userx[0].pub_key && match.honest2_cliam == false) {
+            } else if (match.honest2 == userx[0].pub_key && (match.honest2_cliam == false || !match.honest2_cliam)) {
                 claim2 = true;
             }
             const amountUsd = (Number(usd) / 10_000_000).toFixed(2);
             const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
+            setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
             let honest1 = match.honest1;
             let honest2 = match.honest2;
-            setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
             try {
 
                 setLoadingMessage("Saving user data...");
@@ -203,7 +203,7 @@ export default function GameDetails({ }) {
                 setStatus("error");
                 setReason(reason);
             } else {
-                console.error("Error creating room:", error);
+                console.log("Error creating room:", error);
                 console.log("contraseñadd")
 
                 const { reason, code } = parseContractError(error);
@@ -211,7 +211,7 @@ export default function GameDetails({ }) {
                     error.message || error.reason || "An unexpected error occurred.";
 
                 setStatus("error");
-                setReason(errorMsg);
+                setMsgLoading(reason);
             }
 
             return;
@@ -249,7 +249,11 @@ export default function GameDetails({ }) {
                 <View style={styles.teamsRow}>
                     {/* LOCAL */}
                     <View style={styles.teamSection}>
-                        <Image source={teamLogos[match.logo1]} style={styles.logo} />
+                        <TeamShield
+                            colors={teamColorsByID[match.localid].colors}
+                            width={45}
+                            height={61}
+                        />
                         <Text style={styles.teamName}>{match.team1}</Text>
                     </View>
 
@@ -258,7 +262,11 @@ export default function GameDetails({ }) {
 
                     {/* AWAY */}
                     <View style={styles.teamSection}>
-                        <Image source={teamLogos[match.logo2]} style={styles.logo} />
+                        <TeamShield
+                            colors={teamColorsByID[match.awayid].colors}
+                            width={45}
+                            height={61}
+                        />
                         <Text style={styles.teamName}>{match.team2}</Text>
                     </View>
                 </View>

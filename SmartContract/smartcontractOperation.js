@@ -26,7 +26,7 @@ const server = new StellarRpc.Server(
 );
 
 
-const bettingContractAddress = "CA37G7GYBMJ5WDLXOXN2Q7ZCPQX57FNBK3Q7FXPWTMFZA3DMXKCQSFIC";
+const bettingContractAddress = "CCAY5HOH47O5IVZQV6XCLV7NXAN7ST7LNRFXYM6TJ47CUBGANLWDN57G";
 const bettingContract = new Contract(bettingContractAddress);
 
 //fn set_private_bet(user: address, privateData: PrivateBet, game_id: i128)

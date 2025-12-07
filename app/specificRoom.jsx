@@ -156,8 +156,9 @@ export default function RoomDetail({ }) {
             const { reason, code } = parseContractError(error);
             console.log("error", code);
             setStatus("error");
-            setReason(reason);
-            setIsLoading(false);
+            setReason();
+            setMsgLoading(reason)
+
             return;
         }
 
@@ -171,18 +172,30 @@ export default function RoomDetail({ }) {
 
             const value = await claim_refund(userx[0].pub_key, params.room_id, keypairUser);
             console.log("Resultado claim: ", value)
-            const val = value._value._attributes;
-            console.log("Val ", val);
-            const lo = BigInt(val.lo._value);
+            const valueItems = value._value;
+            const valUsd = valueItems[0]._value._attributes;
+            const valTrust = valueItems[1]._value._attributes;
 
-            const amount = (Number(lo) / 10_000_000).toFixed(2);
-            setMsg(`Has reclamado ${amount} USD`);
-            console.log("Result number:", lo.toString());
+            const usd = BigInt(valUsd.lo._value);
+            const trust = BigInt(valTrust.lo._value);
+
+
+            let amountUsd = (Number(usd) / 10_000_000).toFixed(2);
+            const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
             /** we got to show all the info */
-            let cop = await getUsdToCop(amount);
+            let cop = await getUsdToCop(amountUsd);
+
+            if (amountTrust == 0) {
+                setMsgLoading(` + ${cop} `)
+
+            } else {
+                let copTrust = await getUsdToCop(amountUsd);
+
+                setMsgLoading(` + ${cop} y + ${copTrust} `)
+
+            }
 
             /** we got to show all the info */
-            setMsgLoading(` + ${cop} `)
 
             try {
                 const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
@@ -227,7 +240,7 @@ export default function RoomDetail({ }) {
         setMsgLoading("Enviando ...")
 
         try {
-            const keypairUser = keypair; console.log("selecte: ", answer)
+            const keypairUser = keypair; console.log("selecte: ", answer + " " + rooms.match_id, +" " + params.room_id)
             setLoadingMessage("Enviando resultado para su evaluacion")
 
             await summit_result(keypairUser.publicKey(), "description", rooms.match_id, answer, keypairUser, params.room_id,);
@@ -263,15 +276,11 @@ export default function RoomDetail({ }) {
             const { reason, code } = parseContractError(error);
             const errorMsg =
                 error.message || error.reason || "An unexpected error occurred.";
-            if (errorMsg == "Invalid password or corrupted keystore") {
-                console.log("contraseña")
-                setStatus("error");
-                setReason("Pin incorrecto");
-            } else {
-                setStatus("error");
-                setReason(errorMsg);
 
-            }
+            setStatus("error");
+            setMsgLoading(reason)
+
+
 
         }
     };
@@ -315,8 +324,6 @@ export default function RoomDetail({ }) {
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
-            setStatus("success");
-            setIsLoading(false);
             if (answer == "reject" || reject) {
                 setMessage("El resultado propuesto ha sido rechazado, este sera resuelto en breve")
 
@@ -344,6 +351,8 @@ export default function RoomDetail({ }) {
                     console.error('Error fetching user data:', error);
                 }
             }
+            setStatus("success");
+
 
         } catch (error) {
             console.log("error", error);
@@ -351,19 +360,8 @@ export default function RoomDetail({ }) {
             const { reason, code } = parseContractError(error);
             const errorMsg =
                 error.message || error.reason || "An unexpected error occurred.";
-            if (errorMsg == "Invalid password or corrupted keystore") {
-                console.log("contraseña")
-                setStatus("error");
-                setReason("Pin incorrecto");
-                setIsLoading(false);
-
-            } else {
-                setStatus("error");
-                setReason(reason);
-                setIsLoading(false);
-
-
-            }
+            setStatus("error");
+            setMsgLoading(reason)
 
             return;
         }
@@ -809,7 +807,7 @@ export default function RoomDetail({ }) {
                                     style={[styles.decisionButton, { backgroundColor: "#FF5252" }]}
                                     onPress={() => handleDesition("reject")}
                                 >
-                                    <Text style={styles.decisionText}>Revisar de nuevo</Text>
+                                    <Text style={styles.decisionText}>Rechazar</Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -822,7 +820,7 @@ export default function RoomDetail({ }) {
 
                         {claimAvailable && (
                             <TouchableOpacity
-                                style={[styles.decisionButton, { backgroundColor: "#2196F3" }]}
+                                style={[styles.claimButton, { backgroundColor: "#2196F3" }]}
                                 onPress={() => handleClaim()}
                             >
                                 <Text style={styles.decisionText}>Recibir resultado del acuerdo</Text>
@@ -1075,6 +1073,12 @@ const styles = StyleSheet.create({
 
     refundButton: {
         backgroundColor: "#FFC10733",
+        padding: 12,
+        borderRadius: 10,
+        marginTop: 10,
+    },
+    claimButton: {
+        backgroundColor: "#07ff5133",
         padding: 12,
         borderRadius: 10,
         marginTop: 10,

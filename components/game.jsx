@@ -3,13 +3,17 @@ import { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { teamLogos } from "./teamLogos";
-
+import { teamColorsByID } from './TeamColor';
+import TeamShield from './TeamShield';
 const MatchesScreen = ({ onOpen }) => {
 
     const [matches, setMatches] = useState([]);
 
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [Color1, setColor1] = useState([]);
+    const [Color2, setColor2] = useState([]);
+
 
     useEffect(() => {
         const fetchMatches = async () => {
@@ -17,6 +21,7 @@ const MatchesScreen = ({ onOpen }) => {
                 const response = await fetch('http://192.168.1.2:8383/api/data');
                 const data = await response.json();
                 setMatches(data);
+                console.log("matches", data)
             } catch (error) {
                 console.log('Error fetching matches:', error);
             }
@@ -63,10 +68,10 @@ const MatchesScreen = ({ onOpen }) => {
         <TouchableOpacity style={styles.card} onPress={() => onOpen(item.match_id, JSON.stringify(item))}>
             {/* Left team */}
             <View style={styles.teamSection}>
-                <Image
-                    source={teamLogos[item.local_team_logo]}
-
-                    style={styles.logo}
+                <TeamShield
+                    colors={teamColorsByID[item.local_team_id].colors}
+                    width={30}
+                    height={46}
                 />
                 <Text style={styles.teamName}>{limitText(item.local_team_name, 8)}</Text>
             </View>
@@ -79,9 +84,10 @@ const MatchesScreen = ({ onOpen }) => {
 
             {/* Right team */}
             <View style={styles.teamSectionRight}>
-                <Image
-                    source={teamLogos[item.away_team_logo]}
-                    style={styles.logo}
+                <TeamShield
+                    colors={teamColorsByID[item.away_team_id].colors}
+                    width={30}
+                    height={46}
                 />
                 <Text style={styles.teamName}>{limitText(item.away_team_name, 8)}</Text>
             </View>
