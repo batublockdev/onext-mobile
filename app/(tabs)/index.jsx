@@ -3,8 +3,8 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSignOut } from "../(auth)/signout";
-import MatchesScreen from '../../components/game';
 import AppError from '../../components/e404';
+import MatchesScreen from '../../components/game';
 import MatchCard from '../../components/MatchCard';
 import { useApp } from '../contextUser';
 import BetRoomModal from '../modalCreateCh';
@@ -44,12 +44,32 @@ const HomeScreen = () => {
     const USDCasset = new StellarSdk.Asset("USD", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
     const TrustAsset = new StellarSdk.Asset("TRUST", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
     useEffect(() => {
-        fetchRooms();
-        setmyMachesvar([]);
+        const load = async () => {
+            try {
+                UserBalance();
+
+                fetchRooms();
+                setmyMachesvar([]);
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
+
 
     }, []);
     useEffect(() => {
+        const load = async () => {
+            try {
+                UserBalance();
 
+                fetchRooms();
+                setmyMachesvar([]);
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
 
     }, [userx]);
     async function getUsdToCop(usd) {
@@ -70,15 +90,17 @@ const HomeScreen = () => {
 
     const fetchRooms = async () => {
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/rooms?user_id=${userId}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/rooms?user_id=${userId}`);
             const data = await res.json();
             //console.log("my rooms:", data);
             myMaches(data);
             setError404(false);
             if (userx != null) {
-                if (!userx?.[0]?.id_app) {
+                if ((userx[0]?.id_app == undefined)) {
                     setidcode("registro sin completar")
+
                 } else {
+                    console.log(userx[0].id_app)
                     setidcode(userx[0].id_app)
                     setposition(userx[0].position)
 
@@ -87,7 +109,10 @@ const HomeScreen = () => {
 
 
                 }
+
             }
+
+
 
         } catch (error) {
             setError404(true)
@@ -98,14 +123,14 @@ const HomeScreen = () => {
     const supremeCheck = async () => {
         setmyMachesvar([])
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/selectsupreme`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/selectsupreme`);
             const data = await res.json();
             console.log("supreme data:", data);
             const result = data.data;
 
 
             for (let i = 0; i < result.length; i++) {
-                console.log("supreme honest 1:", result[i].honest1);
+                console.log("supreme honest 1:", result[i]);
                 console.log("supreme honest 2:", result[i].honest2);
                 console.log("user pub key:", userx[0].pub_key);
                 if (result[i].honest1 !== userx[0].pub_key && result[i].honest2 !== userx[0].pub_key) {
@@ -117,8 +142,17 @@ const HomeScreen = () => {
 
                         const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
                         const voteLimit = new Date(endTime.getTime() + 18000 * 1000);
+                        let show = false;
+                        if ((voteLimit < now) && (now < limitSupreme) && !result[i].distributed) {
+                            show = true;
+                        }
+                        if ((result[i].allusersvoted) && !result[i].distributed && (now < limitSupreme)) {
+                            show = true;
 
-                        if ((voteLimit > now && result[i].allusersvoted) && (now < limitSupreme)) {
+                        }
+                        if (show) {
+
+
                             const a = {
                                 localid: result[i].local_team_id,
                                 awayid: result[i].away_team_id,
@@ -197,7 +231,7 @@ const HomeScreen = () => {
     const myMaches = async (rooms) => {
         const now = new Date();
         for (let i = 0; i < rooms.length; i++) {
-            const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
             const data = await res.json();
             console.log("my match data:", data);
             const startGame = new Date(data[0].start_time);
@@ -206,7 +240,7 @@ const HomeScreen = () => {
             const limit = new Date(endTime.getTime() + 18000 * 1000);
             const limitSupreme = new Date(endTime.getTime() + 104400 * 1000);
 
-            if (now > limitSupreme && data[0].user_bet != "false" && !data[0].result && data[0].active && !data[0].user_claim) {
+            if (now > limitSupreme && data[0].user_bet != "false" && !data[0].result && data[0].active && !data[0].user_claim && !data[0].supreme_distributed) {
                 console.log("no result so claim refund");
                 let usd = await getUsdToCop(parseFloat((data[0].min_amount) / 10_000_000));
                 let formattedUsd = await formatCOP(usd);
@@ -328,12 +362,7 @@ const HomeScreen = () => {
 
 
     }
-    useEffect(() => {
-        UserBalance();
-    }, []);
-    useEffect(() => {
-        UserBalance();
-    }, [userx]);
+
     const UserBalance = async () => {
         if (userx != null) {
             if (!(!userx[0]?.pub_key)) {

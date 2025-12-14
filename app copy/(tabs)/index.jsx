@@ -92,7 +92,7 @@ const HomeScreen = () => {
 
     const fetchRooms = async () => {
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/rooms?user_id=${userId}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/rooms?user_id=${userId}`);
             const data = await res.json();
             //console.log("my rooms:", data);
             myMaches(data);
@@ -104,7 +104,7 @@ const HomeScreen = () => {
     const supremeCheck = async () => {
         console.log("got here")
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/selectsupreme`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/selectsupreme`);
             const data = await res.json();
             console.log("supreme games need of a result", data);
             const result = data.data;
@@ -184,7 +184,7 @@ const HomeScreen = () => {
 
         const now = new Date();
         for (let i = 0; i < rooms.length; i++) {
-            const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
             const data = await res.json();
             console.log("my match data:", data);
             const startGame = new Date(data[0].start_time);

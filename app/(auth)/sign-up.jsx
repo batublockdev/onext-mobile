@@ -1,8 +1,7 @@
 import { useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import * as React from 'react';
-import useState from 'react';
-import { Text, TextInput, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignUpScreen() {
     const { isLoaded, signUp, setActive } = useSignUp()
@@ -45,7 +44,7 @@ export default function SignUpScreen() {
         } catch (err) {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
-            setGlobalError("Error")
+            setGlobalError(err)
             console.log(err)
 
         }
@@ -76,7 +75,7 @@ export default function SignUpScreen() {
                 // If the status is not complete, check why. User may need to
                 // complete further steps.
                 console.log(err)
-                setcodeError("Error")
+                setcodeError(err)
 
 
             }
@@ -84,31 +83,31 @@ export default function SignUpScreen() {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
             console.log(err)
-            setcodeError("Error")
+            setcodeError(err)
         }
     }
 
     if (pendingVerification) {
         return (
-            <>
-                <Text style={styles.title2}>Verify your email</Text>
+            <View style={styles.darkContainer}>
+                <Text style={styles.titleImproved}>Verifica tu correo</Text>
 
-                <Text style={styles.subtitle}>
-                    Enter the code we sent to your inbox
+                <Text style={styles.subtitleImproved}>
+                    Ingresa el código que enviamos a tu bandeja de entrada
                 </Text>
 
                 {globalError && (
-                    <View style={styles.errorBox}>
+                    <View style={styles.errorBoxImproved}>
                         <Text style={styles.errorBoxText}>{globalError}</Text>
                     </View>
                 )}
 
-                <View style={styles.codeWrapper}>
+                <View style={styles.codeWrapperImproved}>
                     <TextInput
-                        style={styles.codeInput}
-                        placeholderTextColor="#6B7280"
+                        style={styles.codeInputImproved}
+                        placeholderTextColor="#9CA3AF"
                         value={code}
-                        placeholder="Verification code"
+                        placeholder="Código de verificación"
                         keyboardType="numeric"
                         maxLength={6}
                         onChangeText={(value) => {
@@ -118,19 +117,18 @@ export default function SignUpScreen() {
                     />
                     {codeError && <Text style={styles.errorText}>{codeError}</Text>}
 
-                    <TouchableOpacity style={styles.button} onPress={onVerifyPress}>
-                        <Text style={styles.buttonText}>Verify</Text>
+                    <TouchableOpacity style={styles.buttonImproved} onPress={onVerifyPress}>
+                        <Text style={styles.buttonImprovedText}>Verificar</Text>
                     </TouchableOpacity>
                 </View>
+            </View>
 
-
-            </>
         )
     }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.title}>Crear Cuenta</Text>
 
             {globalError && (
                 <View style={styles.errorBox}>
@@ -140,7 +138,7 @@ export default function SignUpScreen() {
 
             <TextInput
                 style={styles.input}
-                placeholder="First Name"
+                placeholder="Nombre"
                 placeholderTextColor="#9CA3AF"
                 value={firstName}
                 onChangeText={(value) => {
@@ -152,7 +150,7 @@ export default function SignUpScreen() {
 
             <TextInput
                 style={styles.input}
-                placeholder="Email"
+                placeholder="Correo"
                 placeholderTextColor="#9CA3AF"
                 value={emailAddress}
                 onChangeText={(value) => {
@@ -164,7 +162,7 @@ export default function SignUpScreen() {
 
             <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder="Contraseña"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={true}
                 value={password}
@@ -181,14 +179,14 @@ export default function SignUpScreen() {
                 disabled={isLoading}
             >
                 <Text style={styles.buttonText}>
-                    {isLoading ? 'Creating Account...' : 'Continue'}
+                    {isLoading ? 'Creando cuenta...' : 'Continuar'}
                 </Text>
             </TouchableOpacity>
 
             <View style={styles.signInRow}>
-                <Text style={styles.normalText}>Already have an account?</Text>
+                <Text style={styles.normalText}>¿Ya tienes una cuenta?</Text>
                 <Link href="/sign-in">
-                    <Text style={styles.signupLink}> Sign in</Text>
+                    <Text style={styles.signupLink}> Inicia sesión</Text>
                 </Link>
             </View>
         </View>
@@ -197,10 +195,76 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-    codeWrapper: {
-        width: "70%",        // <= Reduce width
-        alignSelf: "center", // <= Center horizontally
+    darkContainer: {
+        flex: 1,
+        backgroundColor: "#0B1220", // deep dark background
+        paddingHorizontal: 20,
+    },
+
+    titleImproved: {
+        marginTop: 70,
+
+        fontSize: 28,
+        fontWeight: "700",
+        color: "#FFFFFF",
+        textAlign: "center",
+        marginBottom: 10,
+    },
+
+    subtitleImproved: {
+        fontSize: 16,
+        color: "#CBD5E1",
+        textAlign: "center",
+        marginBottom: 25,
+    },
+
+    errorBoxImproved: {
+        backgroundColor: "#ff4d4d20",
+        borderLeftWidth: 4,
+        borderLeftColor: "#ff4d4d",
+        padding: 12,
+        borderRadius: 10,
+        marginBottom: 15,
+    },
+
+    errorBoxText: {
+        color: "#ff4d4d",
+        textAlign: "center",
+        fontWeight: "600",
+    },
+
+    codeWrapperImproved: {
+        width: "100%",
+        alignItems: "center",
+    },
+
+    codeInputImproved: {
+        width: "80%",
+        height: 60,
+        backgroundColor: "#1E293B",
+        color: "#FFFFFF",
+        borderRadius: 12,
+        fontSize: 22,
+        textAlign: "center",
+        letterSpacing: 8,
+        borderWidth: 1,
+        borderColor: "#334155",
         marginBottom: 20,
+    },
+
+    buttonImproved: {
+        width: "80%",
+        backgroundColor: "#35D787",
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: "center",
+        marginTop: 10,
+    },
+
+    buttonImprovedText: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#000000",
     },
 
 

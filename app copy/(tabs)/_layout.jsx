@@ -2,16 +2,13 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useUser } from "@clerk/clerk-react";
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { useEffect } from 'react';
 import 'react-native-get-random-values'; // MUST be first
-import { Keypair } from 'stellar-sdk';
-import PinVerification from '../../components/pin';
-import PrivateKeyImport from '../../components/importprivatekey';
 
 import { useApp } from '../contextUser';
 
 const TabsLayout = () => {
+
 
     const { isSignedIn } = useAuth()
     const { user } = useUser();
@@ -23,7 +20,7 @@ const TabsLayout = () => {
         console.log("User ID:", user.id); // Log the user ID to verify it's being accessed correctly
         const fetchUser = async () => {
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/user', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/user', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

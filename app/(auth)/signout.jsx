@@ -11,7 +11,7 @@ export function useSignOut() {
             await signOut(); // Clerk logout
             router.replace("/sign-in"); // Redirect to your login route
         } catch (err) {
-            console.error("Sign out error:", err);
+            console.log("Sign out error:", err);
             Alert.alert("Error", "Failed to sign out");
         }
     };

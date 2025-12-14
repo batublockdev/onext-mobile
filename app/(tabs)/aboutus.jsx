@@ -1,69 +1,41 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-
-const legalContent = {
-    privacy: [
-        { title: "Última actualización: 3 de diciembre de 2025", text: "" },
-        { title: "1. Información que recopilamos", text: "Nombre de usuario, correo electrónico, acuerdos creados y estado de los smart contracts." },
-        { title: "2. Cómo usamos tu información", text: "Facilitar la creación y seguimiento de acuerdos, mejorar la app y comunicarnos contigo sobre novedades." },
-        { title: "3. Seguridad", text: "Claves privadas se almacenan solo en el dispositivo. Implementamos medidas técnicas para proteger tus datos." },
-        { title: "4. Contacto", text: "soporte@[tuapp].com" },
-    ],
-    terms: [
-        { title: "Última actualización: 3 de diciembre de 2025", text: "" },
-        { title: "1. Uso de la app", text: "Debes ser mayor de 18 años. La app facilita la creación y seguimiento de acuerdos en smart contracts; no garantiza cumplimiento entre usuarios." },
-        { title: "2. Cuentas y seguridad", text: "Eres responsable de mantener tu cuenta y claves privadas seguras." },
-        { title: "3. Acuerdos entre usuarios", text: "Todos los acuerdos se registran en smart contracts. La app solo facilita su creación y seguimiento; disputas son responsabilidad de los usuarios." },
-        { title: "4. Contacto", text: "soporte@[tuapp].com" },
-    ],
-    disclaimer: [
-        { title: "Última actualización: 3 de diciembre de 2025", text: "" },
-        { title: "1. Aviso legal", text: "La app no garantiza el cumplimiento del acuerdo, solo la ejecución correcta del smart contract." },
-        { title: "2. Riesgo", text: "Errores en claves, configuración o uso de la app pueden afectar los contratos." },
-        { title: "3. Limitación de responsabilidad", text: "No somos responsables de disputas, pérdidas o daños derivados del uso de la app o de acuerdos entre usuarios." },
-        { title: "4. Contacto", text: "soporte@[tuapp].com" },
-    ],
-};
+import { View, Text, TouchableOpacity, ScrollView, Linking, StyleSheet } from "react-native";
+import DisclaimerModal from "../../components/disclaimer";
 
 const LegalMenu = () => {
     const [open, setOpen] = useState(null); // 'privacy', 'terms', 'disclaimer'
-
+    function formatCOP() {
+        setOpen(false)
+    }
     return (
         <View style={styles.container}>
             <Text style={styles.menuTitle}>Documentos Legales</Text>
 
-            <TouchableOpacity style={styles.menuBtn} onPress={() => setOpen('privacy')}>
+            <TouchableOpacity style={styles.menuBtn} onPress={() =>
+                Linking.openURL(
+                    "https://drive.google.com/file/d/1lGjemYjAtnLJmY79kd_8lHSNkwggjyXY/view"
+                )
+            }>
                 <Text style={styles.menuBtnText}>Política de Privacidad</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuBtn} onPress={() => setOpen('terms')}>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => Linking.openURL(
+                "https://drive.google.com/file/d/1Io13TqCrTLiI4I3tdt6MRbKKb-CVNEtz/view"
+            )}>
                 <Text style={styles.menuBtnText}>Términos y Condiciones</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuBtn} onPress={() => setOpen('disclaimer')}>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => setOpen(true)}>
                 <Text style={styles.menuBtnText}>Disclaimer / Aviso Legal</Text>
             </TouchableOpacity>
 
-            {open && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modal}>
-                        <Text style={styles.header}>
-                            {open === 'privacy' ? 'Política de Privacidad' : open === 'terms' ? 'Términos y Condiciones' : 'Disclaimer'}
-                        </Text>
-                        <ScrollView style={styles.scroll}>
-                            {legalContent[open].map((section, index) => (
-                                <View key={index}>
-                                    <Text style={styles.sectionTitle}>{section.title}</Text>
-                                    <Text style={styles.paragraph}>{section.text}</Text>
-                                </View>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity style={styles.closeBtn} onPress={() => setOpen(null)}>
-                            <Text style={styles.closeBtnText}>Cerrar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
+            <TouchableOpacity style={styles.menuBtn} onPress={() => Linking.openURL(
+                "https://stellar.expert/explorer/testnet/contract/CCAY5HOH47O5IVZQV6XCLV7NXAN7ST7LNRFXYM6TJ47CUBGANLWDN57G"
+            )}>
+                <Text style={styles.menuBtnText}>Smart contrato</Text>
+            </TouchableOpacity>
+            <DisclaimerModal visible={open} onAccept={formatCOP} ></DisclaimerModal>
+
         </View>
     );
 };

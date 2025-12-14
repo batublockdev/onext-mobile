@@ -17,15 +17,20 @@ const LoadingScreen = () => {
     // 2. Create the rotation loop
     useEffect(() => {
         const startRotation = () => {
+            try {
+                Animated.loop(
+                    Animated.timing(rotateAnim, {
+                        toValue: 1,
+                        duration: 3000, // 3 seconds per full rotation (slow and steady)
+                        easing: Easing.linear,
+                        useNativeDriver: true, // Important for performance
+                    })
+                ).start();
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
             // Loop the animation from 0 to 1
-            Animated.loop(
-                Animated.timing(rotateAnim, {
-                    toValue: 1,
-                    duration: 3000, // 3 seconds per full rotation (slow and steady)
-                    easing: Easing.linear,
-                    useNativeDriver: true, // Important for performance
-                })
-            ).start();
+
         };
 
         startRotation();

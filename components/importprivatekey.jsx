@@ -1,13 +1,10 @@
-import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { useUser } from "@clerk/clerk-react";
+import { useEffect, useState } from "react";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Keypair } from "stellar-sdk";
 import { useApp } from '../app/contextUser';
 import PinVerification from './pin';
-import { Keypair } from "stellar-sdk";
-import ConfirmationMessage from "./ConfimationComponent";
 const { executionImport } = require('../self-wallet/wallet');
-
-import { useEffect } from "react";
 export default function PrivateKeyImport({ onContinue, onBack }) {
     const { user } = useUser();
     const [privateKey, setPrivateKey] = useState("");
@@ -35,7 +32,7 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
         },
         {
             title: "Instalar la billetera",
-            description: "Descarga e instala nuestra billetera para continuar.",
+            description: "Descarga e instala tu billetera de preferencia recomendamos DECAF.",
             image: "",
         },
         {
@@ -56,16 +53,12 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
         },
         {
             title: "¡Listo!",
-            description: "Tu billetera está configurada y lista para usar.",
+            description: "App  configurada y lista para usar.",
             image: "",
         },
     ];
 
 
-    /* <PinVerification
-mode="register"
-onComplete={handlePinComplete}
-/>*/
     const onImportLocal = (key) => {
         // Here you can add logic to analyze the private key
         try {
@@ -75,13 +68,13 @@ onComplete={handlePinComplete}
             setStep(step + 1);
             setKey(key);
         } catch (error) {
+            console.log(error)
             setMsg2("Private key incorrecta");
         }
     }
     const handlePinComplete = async (pin) => {
         // Call the wallet creation function with the PIN as password
         console.log("PIN set to:");
-        setLoadingMessage("Importing wallet...");
         const { publicKey, keystore, id_app, secrect } = await executionImport(keyPr, pin);
         console.log("keystore:", keystore);
         console.log("id_app:", id_app);
@@ -89,18 +82,30 @@ onComplete={handlePinComplete}
 
 
 
-
         try {
-            const response = await fetch('http://192.168.1.2:8383/api/usersave', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/api/usersave', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "x", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, id_app: id_app }), // send your user ID here
+                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "token", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, id_app: id_app }), // send your user ID here
             });
 
             if (!response.ok) {
-                console.error('Server responded with error:', response.status);
+                setStatus("error")
+                setLoadingMessage("Problamente esta direccion ya esta registrada");
+                Alert.alert(
+                    "Error",
+                    "Problamente esta direccion ya esta registrada",
+                    [
+                        { text: "OK", onPress: () => setStep(0) }
+                    ],
+                    { cancelable: true }
+                );
+                setStep(0)
+                console.log('Server responded with error:', response.status);
+                setLoadingMessage("");
+
                 return;
             }
             const data = await response.json();
@@ -111,7 +116,17 @@ onComplete={handlePinComplete}
 
 
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            setStatus("error")
+            Alert.alert(
+                "Error",
+                "Intentalo mas tarde",
+                [
+                    { text: "OK", onPress: () => setStep(0) }
+                ],
+                { cancelable: true }
+            ); setStep(0)
+
+            console.log('Error fetching user data:', error);
         }
 
         // Here you can call your create account function
@@ -157,12 +172,17 @@ onComplete={handlePinComplete}
                                         style={styles.input}
                                         placeholder="Ingresa tu clave de recuperación"
                                         placeholderTextColor="#999"
-                                        multiline={true}
+                                        multiline={false}
                                         secureTextEntry={true}
                                         value={privateKey}
                                         onChangeText={setPrivateKey}
                                     />
-
+                                    {/* 🔴 Error message */}
+                                    {msgAnalys && (
+                                        <Text style={styles.errorText}>
+                                            {msgAnalys}
+                                        </Text>
+                                    )}
                                     {/* Botón continuar */}
                                     <TouchableOpacity
                                         style={[
@@ -324,6 +344,11 @@ const styles = StyleSheet.create({
     dotsContainer: {
         flexDirection: "row",
         gap: 6,
+    },
+    errorText: {
+        color: "red",
+        marginTop: 6,
+        fontSize: 13,
     },
 
     dot: {

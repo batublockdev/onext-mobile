@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Share, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import DeleteAccountModal from "../../components/DeleteAccountModal";
 import { useSignOut } from "../(auth)/signout";
 import PrivateKeyImport from "../../components/importprivatekey";
 import { useApp } from '../contextUser';
@@ -18,14 +17,22 @@ export default function ProfileScreen() {
     const router = useRouter();
     const [modalVisible, setModalVisible] = useState(false);
     useEffect(() => {
-        console.log("User ID in Rooms:", !userx ? userx[0]?.position : "no");
-        if (userx != null) {
-            if (!userx[0]?.pub_key) {
-                setImport(true);
-            } else {
+        const load = async () => {
+            try {
+                console.log("User ID in Rooms:", !userx ? userx[0]?.position : "no");
+                if (userx != null) {
+                    if (!userx[0]?.pub_key) {
+                        setImport(true);
+                    } else {
 
+                    }
+                }
+            } catch (e) {
+                console.log("in summiter error:", e);
             }
-        }
+        };
+        load();
+
 
     }, []);
     const handleDeleteAccount = async () => {
@@ -46,11 +53,11 @@ export default function ProfileScreen() {
                 console.log("User deleted:", data);
             })
             .catch(error => {
-                console.error("Failed to delete user:", error);
+                console.log("Failed to delete user:", error);
             });
         try {
 
-            const response = await fetch('http://192.168.1.2:8383/deleteUser', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/deleteUser', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -59,15 +66,21 @@ export default function ProfileScreen() {
             });
 
             if (!response.ok) {
-                console.error('Server responded with error:', response.status);
+                console.log('Server responded with error:', response.status);
                 return;
             }
             const data = await response.json();
             console.log('User data deleted successfully:', data);
+            setUserx([])
+            setKeypair()
+            router.push({
+                pathname: "/sign-in",
+
+            })
 
 
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            console.log('Error fetching user data:', error);
         }
     }
     const handleShare = async () => {
@@ -76,7 +89,7 @@ export default function ProfileScreen() {
                 message: `Manito mira mi id: ${userx ? userx[0].id_app : 'N/A'} meteme a la vaina`,
             });
         } catch (error) {
-            console.error("Error sharing:", error);
+            console.log("Error sharing:", error);
         }
     };
     if (importPkey) {

@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
-
-import { Link } from 'expo-router';
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from 'react';
+import { teamColorsByID } from './TeamColor';
+import TeamShield from './TeamShield';
 
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { teamLogos } from "./teamLogos";
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 export default function ConfirmPrediction({
     amount,
     prediction,
     teamName,
-    teamLogo,
+    teamid,
     onConfirm,
     onBack
 
@@ -19,19 +18,26 @@ export default function ConfirmPrediction({
     const [usdFee, setusdFee] = useState(0); // "trust" | "usd" | null
     const [total, setTotal] = useState(0); // "trust" | "usd" | null
     const [amountFormatted, setAmountFormatted] = useState(0); // "trust" | "usd" | null
+    const [color, setColor] = useState(null); // "trust" | "usd" | null
+
 
     console.log(amount)
     useEffect(() => {
 
+
         async function fetchData() {
-            console.log("Original Amount:", amount);
-            amount = amount / 10000000;
-            amount = await getUsdToCop(amount);
-            console.log("Formatted Amount in COP:", amount, formatCOP(amount));
-            setAmountFormatted(amount);
-            settrustFee(amount * 0.10)
-            setusdFee(amount * 0.20)
-            setTotal(amount + (amount * 0.20));
+            try {
+                console.log("Original Amount:", amount);
+                amount = amount / 10000000;
+                amount = await getUsdToCop(amount);
+                console.log("Formatted Amount in COP:", amount, formatCOP(amount));
+                setAmountFormatted(amount);
+                settrustFee(amount * 0.10)
+                setusdFee(amount * 0.20)
+                setTotal(amount + (amount * 0.20));
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
 
         }
         fetchData();
@@ -67,7 +73,11 @@ export default function ConfirmPrediction({
 
             {/* Team */}
             <View style={styles.teamContainer}>
-                <Image source={teamLogos[teamLogo]} style={styles.logo} />
+                <TeamShield
+                    colors={teamColorsByID[teamid].colors}
+                    width={45}
+                    height={51}
+                />
                 <Text style={styles.teamName}>{teamName}</Text>
             </View>
 

@@ -60,7 +60,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
         };
 
         try {
-            const response = await fetch('http://192.168.1.2:8383/api/userapp', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/api/userapp', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             });
 
             if (!response.ok) {
-                console.error('Server responded with error:', response.status);
+                console.log('Server responded with error:', response.status);
                 return;
             }
 
@@ -93,14 +93,17 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     newUser.id = data[0].user_id;
                     newUser.code = data[0].id_app;
                     setUsers((prev) => [...prev, newUser]);
-                    setUsersPubk((prev) => [...prev, data[0].pub_key]);
+                    setUsersPubk((prev) => {
+                        const updated = [...prev, data[0].pub_key]; // add new value
+                        return [...new Set(updated)];               // remove duplicates
+                    });
                     setFriends([...friends, { id: Date.now().toString(), name: data[0].username }]);
                     setFriendCode("");
                 }
             }
 
         } catch (error) {
-            console.error('Error fetching user data:', error);
+            console.log('Error fetching user data:', error);
         }
 
 
@@ -169,7 +172,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             };
             setMsgLoading("Creando");
 
-            const response = await fetch('http://192.168.1.2:8383/sign-game', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/sign-game', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -178,7 +181,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             });
 
             if (!response.ok) {
-                console.error('Server responded with error:', response.status);
+                console.log('Server responded with error:', response.status);
                 return;
             }
             const data = await response.json();
@@ -200,11 +203,11 @@ export default function BetRoomModal({ visible, onClose, game }) {
             setMsgLoading("Enviando");
 
             setLoadingMessage("creating private bet settings...");
-            const responsex = await fetch('http://192.168.1.2:8383/api/next', {
+            const responsex = await fetch('https://backendtrustapp-production.up.railway.app/api/next', {
                 method: 'GET', // must be POST to send body
             });
             if (!responsex.ok) {
-                console.error('Server responded with error:', responsex.status);
+                console.log('Server responded with error:', responsex.status);
                 return;
             }
             const dataid = await responsex.json();
@@ -222,7 +225,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             setMsgLoading("Guardando");
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/insertrooms', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertrooms', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -231,7 +234,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 const data = await response.json();
@@ -256,7 +259,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
         } catch (error) {
             setMsgLoading("Algo no salio bien");
 
-            console.error("Error creating room:", error);
+            console.log("Error creating room:", error);
             const { reason, code } = parseContractError(error);
             const errorMsg =
                 error.message || error.reason || "An unexpected error occurred.";

@@ -1,8 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Dimensions } from "react-native";
+import { Link } from 'expo-router';
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useRef, useState } from "react";
+import { Dimensions, FlatList, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const { width } = Dimensions.get("window");
-import { Link, useRouter } from 'expo-router';
 
 const slides = [
     {
@@ -27,24 +27,32 @@ const slides = [
     },
     {
         title: "Aclaración Importante",
-        text: "La app facilita el registro de acuerdos entre usuarios. No garantiza resultados externos ni interviene en disputas personales.",
+        text: "La app facilita el registro de acuerdos entre usuarios. No garantiza resultados externos ni interviene en disputas personales, asegurate de revisar el contracto en stellar network (Terminos y condiciondes).",
         bg: "#FDECEC",
     },
 ];
 
-export default function Onboarding({ onLoginPress }) {
+export default function Onboarding({ onLoginPress, onGuestPress }) {
     const flatListRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
 
     // Auto-slide
     useEffect(() => {
-        const interval = setInterval(() => {
-            const nextIndex = (currentIndex + 1) % slides.length;
-            flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-            setCurrentIndex(nextIndex);
-        }, 8000);
+        const load = async () => {
+            try {
+                const interval = setInterval(() => {
+                    const nextIndex = (currentIndex + 1) % slides.length;
+                    flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+                    setCurrentIndex(nextIndex);
+                }, 8000);
 
-        return () => clearInterval(interval);
+                return () => clearInterval(interval);
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
+
     }, [currentIndex]);
 
     const onScroll = event => {
@@ -88,6 +96,11 @@ export default function Onboarding({ onLoginPress }) {
                 <TouchableOpacity style={styles.loginBtn} onPress={onLoginPress}>
                     <Text style={styles.loginText}>Iniciar sesión</Text>
                 </TouchableOpacity>
+                {/* 👉 NUEVO BOTÓN: ENTRAR COMO INVITADO */}
+                <TouchableOpacity style={styles.guestBtn} onPress={onGuestPress}>
+                    <Text style={styles.guestText}>Entrar como invitado</Text>
+                </TouchableOpacity>
+
 
                 <TouchableOpacity >
                     <Link href="/sign-up">
@@ -99,7 +112,16 @@ export default function Onboarding({ onLoginPress }) {
                 <Text style={styles.termsText}>
 
                     Al continuar, aceptas nuestros
-                    <Text style={styles.termsLink}> Términos y Condiciones</Text>.
+                    <Text
+                        style={styles.termsLink}
+                        onPress={() =>
+                            Linking.openURL(
+                                "https://drive.google.com/file/d/1Io13TqCrTLiI4I3tdt6MRbKKb-CVNEtz/view"
+                            )
+                        }
+                    >
+                        Términos y Condiciones
+                    </Text>.
                 </Text>
             </View>
         </View>
@@ -180,6 +202,22 @@ const styles = StyleSheet.create({
     },
     termsLink: {
         color: "#000",
+        fontWeight: "600",
+    },
+    guestBtn: {
+        backgroundColor: "#111",     // similar to login style
+        paddingVertical: 12,
+        borderRadius: 12,
+        width: "100%",
+        alignItems: "center",
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#35D787",
+    },
+
+    guestText: {
+        color: "#35D787",
+        fontSize: 16,
         fontWeight: "600",
     },
 });

@@ -111,7 +111,7 @@ export default function GameDetails({ }) {
 
                 setLoadingMessage("Saving user data...");
                 try {
-                    const response = await fetch('http://192.168.1.2:8383/api/updatesupreme', {
+                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export default function GameDetails({ }) {
                     });
 
                     if (!response.ok) {
-                        console.error('Server responded with error:', response.status);
+                        console.log('Server responded with error:', response.status);
                         return;
                     }
                     setUserDecision(selected)
@@ -129,7 +129,7 @@ export default function GameDetails({ }) {
 
 
                 } catch (error) {
-                    console.error('Error fetching user data:', error);
+                    console.log('Error fetching user data:', error);
                 }
                 setStatus("success");
                 setIsLoading(false);
@@ -179,7 +179,7 @@ export default function GameDetails({ }) {
             setIsLoading(false);
             setLoadingMessage("Saving user data...");
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updatesupreme', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

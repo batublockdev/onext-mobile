@@ -73,11 +73,11 @@ export default function GameDetails({ }) {
         setIsLoading(true);
         setStatus("loading");
 
-        setMsgLoading("Reclamando ...")
+        setMsgLoading("Recibiendo")
         try {
 
             //fn execute_distribution(gameId: i128)
-            setLoadingMessage("Reclamando recompensa")
+            setLoadingMessage("Recibiendo")
 
             const keypairUser = keypair;
             const value = await claim(userx[0].pub_key, match.match_id, "Supreme", keypairUser);
@@ -97,23 +97,22 @@ export default function GameDetails({ }) {
             }
             const amountUsd = (Number(usd) / 10_000_000).toFixed(2);
             const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
-            setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
-            let honest1 = match.honest1;
-            let honest2 = match.honest2;
+            setMsg(`+ ${amountUsd} y + ${amountTrust} Trust`);
+
             try {
 
                 setLoadingMessage("Saving user data...");
                 try {
-                    const response = await fetch('http://192.168.1.2:8383/api/updatesupreme', {
+                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ id_game: match.match_id, honest1, honest2, adm: match.adm, externalUser: match.externalUser, result: match.result, distributed: match.distributed, honest1_cliam: claim1, honest2_cliam: claim2 }), // send your user ID here
+                        body: JSON.stringify({ id_game: match.match_id, honest1: match.honest1, honest2: match.honest2, adm: match.adm, externalUser: match.externalUser, result: match.result, distributed: match.distributed, honest1_claim: claim1, honest2_claim: claim2 }), // send your user ID here
                     });
 
                     if (!response.ok) {
-                        console.error('Server responded with error:', response.status);
+                        console.log('Server responded with error:', response.status);
                         return;
                     }
                     setUserDecision(selected)
@@ -122,13 +121,13 @@ export default function GameDetails({ }) {
 
 
                 } catch (error) {
-                    console.error('Error fetching user data:', error);
+                    console.log('Error fetching user data:', error);
                 }
                 setStatus("success");
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setStatus("success");
             setMsgLoading("Hecho")
@@ -151,7 +150,8 @@ export default function GameDetails({ }) {
         setMsgLoading("Enviando ...")
         try {
             console.log("Userx in GameDetail:", userx);
-            const keypairUser = keypair; let honest1 = match.honest1;
+            const keypairUser = keypair;
+            let honest1 = match.honest1;
             let honest2 = match.honest2;
             let result = match.result;
             if (match.honest1 == null) {
@@ -172,7 +172,7 @@ export default function GameDetails({ }) {
             }
             setLoadingMessage("Saving user data...");
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updatesupreme', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ export default function GameDetails({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 setUserDecision(selected)
@@ -190,7 +190,7 @@ export default function GameDetails({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setStatus("success");
             setMsgLoading("Hecho")
@@ -287,7 +287,7 @@ export default function GameDetails({ }) {
                         style={styles.rewardButton}
                         onPress={() => handleClaim()}
                     >
-                        <Text style={styles.rewardButtonText}>Reclama tu recompensa</Text>
+                        <Text style={styles.rewardButtonText}>Recibir</Text>
                     </TouchableOpacity>
                 </View>
             )}

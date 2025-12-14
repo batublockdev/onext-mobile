@@ -2,16 +2,14 @@ import { useUser } from "@clerk/clerk-react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import DisclaimerModal from "../components/disclaimer";
-import { FlatList, ScrollView, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfirmPrediction from "../components/ConfirmationPrediction";
 import { ERROR_MESSAGES } from "../components/error";
-import { teamLogos } from "../components/teamLogos";
-import { useApp } from "./contextUser";
 import LoadingOverlay from "../components/loadingCompnent";
-import TrustFullScreenLoading from "../components/TrustFullScreenLoading";
-import TeamShield from "../components/TeamShield";
 import { teamColorsByID } from "../components/TeamColor";
+import TeamShield from "../components/TeamShield";
+import TrustFullScreenLoading from "../components/TrustFullScreenLoading";
+import { useApp } from "./contextUser";
 const {
     place_bet,
     claim,
@@ -73,14 +71,22 @@ export default function RoomDetail({ }) {
     const [selected, setSelected] = useState(null);
     const params = useLocalSearchParams();
     useEffect(() => {
-        fetchRooms();
-        console.log("User ID in Rooms:", user.id);
+        const load = async () => {
+            try {
+                fetchRooms();
+                console.log("User ID in Rooms:", user.id);
+
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
     }, []);
     const handleClaim = async () => {
         setIsLoading(true);
         setStatus("loading");
 
-        setMsgLoading("Reclamando ...")
+        setMsgLoading("Ejecutando")
         try {
 
             //fn execute_distribution(gameId: i128)
@@ -95,6 +101,8 @@ export default function RoomDetail({ }) {
                     throw err;
                 }
             }
+            setMsgLoading("Recibiendo")
+
             //async function claim(address, setting, claimType, keypairUser)
             const value = await claim(userx[0].pub_key, params.room_id, "User", keypairUser);
             console.log("Resultado claim: ", value)
@@ -128,7 +136,7 @@ export default function RoomDetail({ }) {
 
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -137,7 +145,7 @@ export default function RoomDetail({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 const data = await response.json();
@@ -145,11 +153,11 @@ export default function RoomDetail({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setStatus("success");
 
-            setMessage("Ya reclamaste esta recompensa 💰");
+            setMessage("Acuerdo completado");
 
         } catch (error) {
             console.log("error", error);
@@ -166,7 +174,7 @@ export default function RoomDetail({ }) {
     const handleRefund = async () => {
         setIsLoading(true);
         setStatus("loading");
-        setMsgLoading("Reclamando ...")
+        setMsgLoading("Recibiendo")
         try {
             const keypairUser = keypair;
 
@@ -198,7 +206,7 @@ export default function RoomDetail({ }) {
             /** we got to show all the info */
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -207,7 +215,7 @@ export default function RoomDetail({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 const data = await response.json();
@@ -215,10 +223,10 @@ export default function RoomDetail({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setStatus("success");
-            setMessage("Ya reclamaste esta recompensa 💰");
+            setMessage("Acuerdo completado");
 
 
 
@@ -247,7 +255,7 @@ export default function RoomDetail({ }) {
             setStatus("success");
             setIsLoading(false);
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuserresult', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuserresult', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -256,7 +264,7 @@ export default function RoomDetail({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 const data = await response.json();
@@ -264,7 +272,7 @@ export default function RoomDetail({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setMatchResult(answer);
             setStatus("success");
@@ -304,7 +312,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando opinion ")
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -313,7 +321,7 @@ export default function RoomDetail({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 setUserDecision(answer)
@@ -322,7 +330,7 @@ export default function RoomDetail({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             if (answer == "reject" || reject) {
                 setMessage("El resultado propuesto ha sido rechazado, este sera resuelto en breve")
@@ -330,7 +338,7 @@ export default function RoomDetail({ }) {
             }
             if (answer == "reject") {
                 try {
-                    const response = await fetch('http://192.168.1.2:8383/api/insertsupreme', {
+                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertsupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -339,7 +347,7 @@ export default function RoomDetail({ }) {
                     });
 
                     if (!response.ok) {
-                        console.error('Server responded with error:', response.status);
+                        console.log('Server responded with error:', response.status);
                         return;
                     }
                     setUserDecision(answer)
@@ -348,7 +356,7 @@ export default function RoomDetail({ }) {
 
 
                 } catch (error) {
-                    console.error('Error fetching user data:', error);
+                    console.log('Error fetching user data:', error);
                 }
             }
             setStatus("success");
@@ -370,7 +378,7 @@ export default function RoomDetail({ }) {
     const fetchRooms = async () => {
         console.log("Fetching room details for room ID:", params.room_id);
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${params.room_id}`);
             const data = await res.json();
 
             setRooms(data[0]);
@@ -397,7 +405,7 @@ export default function RoomDetail({ }) {
                 setUserDecision(data[0].user_assest)
                 setClaimAvailable(data[0].ready);
                 if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
+                    setMessage("Acuerdo completado");
                 }
             }
 
@@ -475,7 +483,7 @@ export default function RoomDetail({ }) {
                 setcanClaimRefund(true);
                 console.log("no result so claim refund");
                 if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
+                    setMessage("Acuerdo completado");
                 }
 
             }
@@ -483,7 +491,7 @@ export default function RoomDetail({ }) {
                 setcanClaimRefund(true);
                 console.log("no active game after starting");
                 if (data[0].user_claim == true) {
-                    setMessage("Ya reclamaste esta recompensa 💰");
+                    setMessage("Acuerdo completado");
                 }
             }
             if (limit > now && now > endTime && data[0].user_bet != "false" && data[0].active && !data[0].result) {
@@ -508,7 +516,7 @@ export default function RoomDetail({ }) {
                     if (data[0].supreme_result == data[0].user_bet) {
 
                     } else {
-                        setMessage("no obtuvimos tu ponion acerca del resultado y tu prediccion fue incorrecta");
+                        setMessage("no obtuvimos tu opnion acerca del resultado o tu prediccion fue incorrecta");
 
                     }
                 }
@@ -517,7 +525,7 @@ export default function RoomDetail({ }) {
                     if (data[0].user_assest == "approve") {
                         console.log("late approved");
                         if (data[0].user_claim == true) {
-                            setMessage("Ya reclamaste esta recompensa 💰");
+                            setMessage("Acuerdo completado");
                         }
                     } else {
                         setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
@@ -527,7 +535,7 @@ export default function RoomDetail({ }) {
                     if (data[0].user_assest == "reject") {
                         console.log("late approved");
                         if (data[0].user_claim == true) {
-                            setMessage("Ya reclamaste esta recompensa 💰");
+                            setMessage("Acuerdo completado");
                         }
                     } else {
                         setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
@@ -542,7 +550,7 @@ export default function RoomDetail({ }) {
 
             setLoading(false)
         } catch (error) {
-            console.error("Error fetching rooms:", error);
+            console.log("Error fetching rooms:", error);
         }
     };
     console.log(id1)
@@ -599,7 +607,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando prediccion ")
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -608,7 +616,7 @@ export default function RoomDetail({ }) {
                 });
 
                 if (!response.ok) {
-                    console.error('Server responded with error:', response.status);
+                    console.log('Server responded with error:', response.status);
                     return;
                 }
                 const data = await response.json();
@@ -616,7 +624,7 @@ export default function RoomDetail({ }) {
 
 
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.log('Error fetching user data:', error);
             }
             setIsLoading(false);
             setBet(true);
@@ -635,10 +643,10 @@ export default function RoomDetail({ }) {
         setSelected(option);
         if (option == "Team_local") {
             setteamSelected(room.local_team_name);
-            setteamSelectedlogo(room.local_team_logo);
+            setteamSelectedlogo(rooms.local_team_id);
         } else if (option == "Team_away") {
             setteamSelected(room.away_team_name);
-            setteamSelectedlogo(room.away_team_logo);
+            setteamSelectedlogo(rooms.away_team_id);
         }
         setreadytoSend(true);
     };
@@ -713,7 +721,12 @@ export default function RoomDetail({ }) {
 
                 <View style={styles.gameDetails}>
                     <Text style={styles.dateText}>
-                        {new Date(room.start_time).getUTCDate()}{" "}
+                        {new Date(room.start_time).toLocaleString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                            timeZone: "America/Bogota"
+                        })}{" "}
                         {new Date(room.start_time).toLocaleString("en-US", { month: "short", timeZone: "UTC" })}
                     </Text>
 
@@ -874,7 +887,7 @@ export default function RoomDetail({ }) {
                         amount={rooms.min_amount}
                         prediction={selected}
                         teamName={teamSelected}
-                        teamLogo={teamSelectedlogo}
+                        teamid={teamSelectedlogo}
                         onConfirm={(data) => {
                             // this runs in your previous screen
                             console.log("CONFIRMED DATA →", data);

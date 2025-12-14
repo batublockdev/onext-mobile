@@ -62,8 +62,16 @@ export default function RoomDetail({ }) {
     const [selected, setSelected] = useState(null);
     const params = useLocalSearchParams();
     useEffect(() => {
-        fetchRooms();
-        console.log("User ID in Rooms:", user.id);
+        const load = async () => {
+            try {
+                fetchRooms();
+                console.log("User ID in Rooms:", user.id);
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
+
     }, []);
     const handleClaim = async (pin) => {
         console.log("User claimed rewards!");
@@ -100,7 +108,7 @@ export default function RoomDetail({ }) {
             setMsg(`Has reclamado ${amountUsd} USD y ${amountTrust} en Trust`);
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -148,7 +156,7 @@ export default function RoomDetail({ }) {
             setMsg(`Has reclamado ${amount} USD`);
             console.log("Result number:", lo.toString());
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -196,7 +204,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Gueardando resultado ")
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuserresult', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuserresult', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -257,7 +265,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando opinion ")
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -285,7 +293,7 @@ export default function RoomDetail({ }) {
             }
             if (selected == "reject") {
                 try {
-                    const response = await fetch('http://192.168.1.2:8383/api/insertsupreme', {
+                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertsupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -334,7 +342,7 @@ export default function RoomDetail({ }) {
     const fetchRooms = async () => {
         console.log("Fetching room details for room ID:", params.room_id);
         try {
-            const res = await fetch(`http://192.168.1.2:8383/api/room?user_id=${user.id}&room_id=${params.room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${params.room_id}`);
             const data = await res.json();
             setRooms(data[0]);
 
@@ -507,7 +515,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando prediccion ")
 
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/updateroomuser', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

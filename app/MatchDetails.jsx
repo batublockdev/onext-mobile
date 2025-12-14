@@ -67,7 +67,7 @@ export default function MatchDetails() {
             return;
         }
         try {
-            const response = await fetch('http://192.168.1.2:8383/api/userapp', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/api/userapp', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ export default function MatchDetails() {
                 team_local
             };
 
-            const response = await fetch('http://192.168.1.2:8383/sign-game', {
+            const response = await fetch('https://backendtrustapp-production.up.railway.app/sign-game', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -202,7 +202,7 @@ export default function MatchDetails() {
 
 
             setLoadingMessage("creating private bet settings...");
-            const responsex = await fetch('http://192.168.1.2:8383/api/next', {
+            const responsex = await fetch('https://backendtrustapp-production.up.railway.app/api/next', {
                 method: 'GET', // must be POST to send body
             });
             if (!responsex.ok) {
@@ -217,7 +217,7 @@ export default function MatchDetails() {
             console.log('User data saved successfully:', dataid);
             await set_private_bet(minBet, id_game, description, keypairUser.publicKey(), dataid.nextRoomId, keypairUser, usersPubk);
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/insertrooms', {
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertrooms', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

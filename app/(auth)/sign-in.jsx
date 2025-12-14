@@ -1,12 +1,10 @@
 import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
-import React from 'react';
-import useState from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Onboarding from '../../components/onboarding';
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import React from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Onboarding from '../../components/onboarding';
 
 export default function Page() {
     const { signIn, setActive, isLoaded } = useSignIn()
@@ -59,8 +57,30 @@ export default function Page() {
             setGlobalError("Invalid email or password.");
         }
     }
+    const onGuestPress = async () => {
+        console.log("Entrando como invitado...");
+        //Testing account 
+
+        const signInAttempt = await signIn.create({
+            identifier: "banguardos@gmail.com",
+            password: "Trust35000",
+        })
+
+        // If sign-in process is complete, set the created session as active
+        // and redirect the user
+        if (signInAttempt.status === 'complete') {
+            await setActive({ session: signInAttempt.createdSessionId })
+            setOnboarding(false)
+
+            router.replace('/')
+        } else {
+            // If the status isn't complete, check why. User might need to
+            // complete further steps.
+            Alert.alert("Tenemos problemas al entrar como invitado, registrate o intentalo mas tarde")
+        }
+    };
     if (Onboardingx) {
-        return <Onboarding onLoginPress={() => setOnboarding(false)} />
+        return <Onboarding onLoginPress={() => setOnboarding(false)} onGuestPress={onGuestPress} />
     } else {
 
         return (
@@ -81,8 +101,8 @@ export default function Page() {
                         keyboardShouldPersistTaps="handled"
                         showsVerticalScrollIndicator={false}
                     >
-                        <Text style={styles.title}>Welcome Back</Text>
-                        <Text style={styles.subtitle}>Sign in to continue</Text>
+                        <Text style={styles.title}>Bienvenido de nuevo</Text>
+                        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
                         {/* Global Error Box */}
                         {globalError && (
@@ -94,7 +114,7 @@ export default function Page() {
                         <View style={styles.inputContainer}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter email"
+                                placeholder="Ingresa tu correo"
                                 placeholderTextColor="#6B7280"
                                 autoCapitalize="none"
                                 value={emailAddress}
@@ -108,7 +128,7 @@ export default function Page() {
 
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter password"
+                                placeholder="Ingresa tu contraseña"
                                 placeholderTextColor="#6B7280"
                                 secureTextEntry
                                 value={password}
@@ -122,13 +142,13 @@ export default function Page() {
                         </View>
 
                         <TouchableOpacity style={styles.button} onPress={onSignInPress}>
-                            <Text style={styles.buttonText}>Sign In</Text>
+                            <Text style={styles.buttonText}>Iniciar Sesión</Text>
                         </TouchableOpacity>
 
                         <View style={styles.signupRow}>
-                            <Text style={styles.signupText}>Don't have an account? </Text>
+                            <Text style={styles.signupText}>¿No tienes una cuenta? </Text>
                             <Link href="/sign-up">
-                                <Text style={styles.signupLink}>Sign Up</Text>
+                                <Text style={styles.signupLink}>Regístrate</Text>
                             </Link>
                         </View>
                     </ScrollView>

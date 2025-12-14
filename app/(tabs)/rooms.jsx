@@ -1,11 +1,11 @@
 import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
-import { useEffect, useState, useCallback } from "react";
-import { FlatList, ScrollView, Image, StyleSheet, Text, TouchableOpacity, View, RefreshControl } from "react-native";
-import { teamLogos } from "../../components/teamLogos";
+import { useCallback, useEffect, useState } from "react";
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AppError from '../../components/e404';
 import { teamColorsByID } from "../../components/TeamColor";
 import TeamShield from "../../components/TeamShield";
+
 export default function Rooms() {
     const [rooms, setRooms] = useState([]);
     const [code, setCode] = useState("");
@@ -81,17 +81,24 @@ export default function Rooms() {
 
     // ✅ Example: Fetch existing rooms
     useEffect(() => {
-
-        fetchRooms();
+        const load = async () => {
+            try {
+                fetchRooms();
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
     }, []);
 
     const fetchRooms = async () => {
         try {
-            console.log("getting data")
             setRooms([]);
 
-            const res = await fetch(`http://192.168.1.2:8383/api/rooms?user_id=${userId}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/rooms?user_id=${userId}`);
             const data = await res.json();
+            console.log("getting data", data)
+
             status(data);
         } catch (error) {
             console.log("Error fetching rooms:", error);
@@ -101,7 +108,6 @@ export default function Rooms() {
     const status = async (data) => {
         const now = new Date();
         for (let i = 0; i < data.length; i++) {
-            console.log(data[i]);
             const startGame = new Date(data[i].start_time);
 
             const endTime = new Date(data[i].finish_time);
@@ -116,23 +122,24 @@ export default function Rooms() {
                     status = "Pendiente"
                 }
             }
-            if (data[0].distributed == true) {
-                if (now > limit && !(data[0].user_assest == "approve" || data[0].user_assest == "reject")) {
-                    if (data[0].supreme_result == data[0].user_bet) {
+            if (data[i].distributed == true) {
+
+                if (now > limit && !(data[i].user_assest == "approve" || data[i].user_assest == "reject")) {
+                    if (data[i].supreme_result == data[i].user_bet) {
                         status = "Ganada"
                     } else {
                         status = "Perdida"
 
                     }
-                } else if (data[0].supreme_result == data[0].result) {
-                    if (data[0].user_assest == "approve") {
+                } else if (data[i].supreme_result == data[i].result) {
+                    if (data[i].user_assest == "approve") {
                         status = "Ganada"
                     } else {
                         status = "Perdida"
 
                     }
                 } else {
-                    if (data[0].user_assest == "reject") {
+                    if (data[i].user_assest == "reject") {
                         status = "Ganada"
                     }
                     else {
@@ -145,10 +152,12 @@ export default function Rooms() {
 
             } else {
                 if ((data[i].ready && data[i].result == data[i].user_bet) || (data[i].result && data[i].supreme_result == data[i].user_bet && data[i].supreme_distributed)) {
+                    console.log("gano", data[i])
                     status = "Ganada"
                 }
                 if ((data[i].ready && data[i].result != data[i].user_bet) || (data[i].result && data[i].supreme_result != data[i].user_bet && data[i].supreme_distributed)) {
                     status = "Perdida"
+                    console.log("Perdio", data[i])
                 }
             }
 
@@ -163,7 +172,7 @@ export default function Rooms() {
             if (data[i].user_bet == "Team_away") {
                 pick = data[i].away_team_name;
             } else if (data[i].user_bet == "Team_local") {
-                pick = data[i].away_team_name;
+                pick = data[i].local_team_name;
             }
             let profitCop = await getUsdToCop(data[i].min_amount / 10000000);
 
@@ -204,6 +213,7 @@ export default function Rooms() {
                 })
             }
         >
+
             {/* TOP ROW */}
             <View style={styles.topRow}>
                 {/* STATUS BADGE */}
@@ -294,6 +304,18 @@ export default function Rooms() {
 }
 
 const styles = StyleSheet.create({
+    deleteBtn: {
+        position: "absolute",
+        top: 10,
+        right: 10,
+        zIndex: 10,
+        backgroundColor: "red",
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: "center",
+        alignItems: "center",
+    },
     container: {
         flex: 1,
         backgroundColor: "#0A0F14",
@@ -354,7 +376,7 @@ const styles = StyleSheet.create({
 
     date: {
         position: "absolute",
-        right: 0,
+        left: 0,
         top: 0,
         fontSize: 13,
         fontWeight: "500",

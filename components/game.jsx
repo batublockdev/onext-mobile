@@ -18,7 +18,7 @@ const MatchesScreen = ({ onOpen }) => {
     useEffect(() => {
         const fetchMatches = async () => {
             try {
-                const response = await fetch('http://192.168.1.2:8383/api/data');
+                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/data');
                 const data = await response.json();
                 setMatches(data);
                 console.log("matches", data)

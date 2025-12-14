@@ -1,14 +1,13 @@
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    Keyboard,
     KeyboardAvoidingView,
+    Platform,
     ScrollView,
+    StyleSheet,
     Text,
     TextInput,
-    View,
-    StyleSheet,
-    Platform,
+    View
 } from "react-native";
 
 export default function PinVerification({
@@ -25,12 +24,21 @@ export default function PinVerification({
 
     // 🔥 Reset PIN when parent sends status (success or error)
     useEffect(() => {
-        if (status) {
-            setPin(["", "", "", ""]);
-            setTimeout(() => {
-                inputs.current[0]?.focus();
-            }, 100);
-        }
+        const load = async () => {
+            try {
+                if (status) {
+                    setLoading(false)
+                    setPin(["", "", "", ""]);
+                    setTimeout(() => {
+                        inputs.current[0]?.focus();
+                    }, 100);
+                }
+            } catch (e) {
+                console.log("Startup error:", e);
+            }
+        };
+        load();
+
     }, [status]);
 
     const handlePin = async (pinCode) => {

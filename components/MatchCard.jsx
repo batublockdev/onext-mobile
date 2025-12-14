@@ -5,6 +5,7 @@ import { teamColorsByID } from "./TeamColor";
 import TeamShield from "./TeamShield";
 export default function MatchCard({ data, goToGameDetail }) {
     const { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed } = data;
+
     const themes = {
         cobrar: {
             bg: "#ff8888ff",
@@ -33,12 +34,20 @@ export default function MatchCard({ data, goToGameDetail }) {
             sub: "#3f0000ff",
             score: "#333",
             minuteBg: "#ddd"
+        },
+        empty: {
+            bg: "#dcdcdc",
+            text: "#000",
+            sub: "#666",
+            score: "#000",
+            minuteBg: "#bbb"
         }
     };
 
     const theme = themes[gameState] || themes.upcoming;
 
     return (
+
         <TouchableOpacity onPress={() => goToGameDetail(roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed)} style={[styles.card, { backgroundColor: theme.bg }]}>
             <Text style={[styles.league, { color: theme.sub }]}>{league}</Text>
             <Text style={[styles.week, { color: theme.sub }]}>Week {week}</Text>
@@ -82,6 +91,7 @@ export default function MatchCard({ data, goToGameDetail }) {
                 </View>
             </View>
         </TouchableOpacity>
+
 
     );
 }
@@ -153,7 +163,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         padding: 20,
         marginRight: 15,
-        width: 260,
+        width: 240,
         backgroundColor: "#f8f8f8",
         alignItems: "center",
         justifyContent: "center",
