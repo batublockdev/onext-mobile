@@ -1,5 +1,3 @@
-import { useAuth } from '@clerk/clerk-expo';
-import { useUser } from "@clerk/clerk-react";
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -8,14 +6,16 @@ import { Keypair } from 'stellar-sdk';
 import AppError from '../../components/e404';
 import PinVerification from '../../components/pin';
 import TrustFullScreenLoading from '../../components/TrustFullScreenLoading';
+import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../hook/useNotifications';
 import { useApp } from '../contextUser';
 const { decryptOnly } = require('../../self-wallet/wallet');
 
+
 const TabsLayout = () => {
 
-    const { isSignedIn } = useAuth()
-    const { user } = useUser();
+    const { session } = useAuth()
+
     const { userx, setUserx, keypair, setKeypair } = useApp();
     const [loadingMessage, setLoadingMessage] = useState('Please enter your PIN to continue.');
     const [pinStatus, setPinStatus] = useState(null); // "success", "error", or null
@@ -29,7 +29,7 @@ const TabsLayout = () => {
     useEffect(() => {
         setisLoadingAnimation(true)
         const fetchUser = async () => {
-            if (isSignedIn) {
+            if (session) {
 
                 try {
                     const response = await fetch('https://backendtrustapp-production.up.railway.app/api/user', {
@@ -37,7 +37,7 @@ const TabsLayout = () => {
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ id_user: user.id }), // send your user ID here
+                        body: JSON.stringify({ id_user: session.user.id }), // send your user ID here
                     });
 
                     if (!response.ok) {
@@ -49,7 +49,7 @@ const TabsLayout = () => {
                     console.log('Fetched user data:', data);
                     setUserx(data);
                     // Update context with new user dataif()
-                    if (user.id == "user_36mxXZLXwQHlcfGpGGRISaqLLmV") {
+                    if (session.user.id == "96440fdf-da59-4bcb-8005-9b659bd65625") {
                         handlePinComplete("0000")
                     } else {
                         handleClick(data);
@@ -72,7 +72,7 @@ const TabsLayout = () => {
         };
 
         fetchUser();
-    }, [isSignedIn]);
+    }, [session]);
 
 
 
@@ -112,7 +112,7 @@ const TabsLayout = () => {
         } catch (error) {
             console.log(error)
             setLoadingMessage("PIN incorrecto, intente de nuevo.");
-            if (user.id == "user_36mxXZLXwQHlcfGpGGRISaqLLmV") {
+            if (session.user.id == "96440fdf-da59-4bcb-8005-9b659bd65625") {
                 setLoadingMessage("Escribe 0000");
             }
             setPinStatus("error");
@@ -122,7 +122,7 @@ const TabsLayout = () => {
     }
 
 
-    if (!isSignedIn) return <Redirect href={'/(auth)/sign-in'} />
+    if (!session) return <Redirect href={'/(auth)/sign-in'} />
 
 
     return (

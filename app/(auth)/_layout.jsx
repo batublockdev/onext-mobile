@@ -1,20 +1,18 @@
-import { useAuth } from '@clerk/clerk-expo';
 import { Redirect, Stack } from 'expo-router';
 import TrustFullScreenLoading from '../../components/TrustFullScreenLoading';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AuthRoutesLayout() {
-    const { isLoaded, isSignedIn } = useAuth();
 
-    // 1. Show loading animation while Clerk initializes
-    if (!isLoaded) {
+    const { session, loading } = useAuth()
+
+    if (loading) {
         return <TrustFullScreenLoading />;
     }
 
-    // 2. If user is signed in → redirect to main app
-    if (isSignedIn) {
-        return <Redirect href="/" options={{ headerShown: false }} />;
+    if (session) {
+        return <Redirect href="/" options={{ headerShown: false }} />;;
     }
 
-    // 3. Otherwise show the authentication stack
     return <Stack screenOptions={{ headerShown: false }} />;
 }

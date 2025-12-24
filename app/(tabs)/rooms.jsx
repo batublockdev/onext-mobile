@@ -1,20 +1,21 @@
-import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AppError from '../../components/e404';
 import { teamColorsByID } from "../../components/TeamColor";
 import TeamShield from "../../components/TeamShield";
+import { useAuth } from '../../context/AuthContext';
 
 export default function Rooms() {
     const [rooms, setRooms] = useState([]);
     const [code, setCode] = useState("");
     const router = useRouter();
-    const { user } = useUser();
+    const { session } = useAuth()
+
     const [refreshing, setRefreshing] = useState(false);
     const [error404, setError404] = useState(false);
 
-    const userId = user ? user.id : null;
+    const userId = session ? session.user.id : null;
     const statusStyles = {
         Ganada: {
             backgroundColor: "#35D787",

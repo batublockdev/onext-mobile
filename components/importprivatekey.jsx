@@ -1,12 +1,14 @@
-import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Keypair } from "stellar-sdk";
 import { useApp } from '../app/contextUser';
+import { useAuth } from '../context/AuthContext';
 import PinVerification from './pin';
+
 const { executionImport } = require('../self-wallet/wallet');
 export default function PrivateKeyImport({ onContinue, onBack }) {
-    const { user } = useUser();
+    const { session } = useAuth()
+
     const [privateKey, setPrivateKey] = useState("");
     const [step, setStep] = useState(0);
     const [status, setStatus] = useState(null); // null | "success" | "error".
@@ -88,7 +90,7 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id_user: user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "token", username: user.firstName, user_email: user.emailAddresses[0].emailAddress, id_app: id_app }), // send your user ID here
+                body: JSON.stringify({ id_user: session.user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "token", username: session.user.user_metadata.name, user_email: session.user.email, id_app: id_app }), // send your user ID here
             });
 
             if (!response.ok) {

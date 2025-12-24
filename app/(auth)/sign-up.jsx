@@ -1,10 +1,9 @@
-import { useSignUp } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import * as React from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
 
 export default function SignUpScreen() {
-    const { isLoaded, signUp, setActive } = useSignUp()
     const router = useRouter()
     const [firstName, setFirstName] = React.useState('');
     const [firstNameError, setFirstNameError] = React.useState('');
@@ -25,106 +24,37 @@ export default function SignUpScreen() {
     // Handle submission of sign-up form
     const onSignUpPress = async () => {
         setGlobalError("")
-        if (!isLoaded) return
+        //if (!isLoaded) return
 
         // Start sign-up process using email and password provided
         try {
-            await signUp.create({
-                emailAddress,
-                password,
-                firstName,
+            const {
+                data: { session },
+                error,
+            } = await supabase.auth.signUp({
+                email: emailAddress,
+                password: password,
+                options: {
+                    data: {
+                        name: firstName
+                    }
+                }
             })
-
-            // Send user an email with verification code
-            await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-
+            if (error) {
+                console.log(error)
+            }
             // Set 'pendingVerification' to true to display second form
             // and capture OTP code
-            setPendingVerification(true)
         } catch (err) {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
-            setGlobalError(err)
+            setGlobalError("Error intentalo de nuevo")
             console.log(err)
 
         }
     }
 
-    // Handle submission of verification form
-    const onVerifyPress = async () => {
-        setGlobalError("")
 
-        if (!isLoaded) return
-
-        try {
-            // Use the code the user provided to attempt verification
-            console.log("Verifying code:", code)
-            const signUpAttempt = await signUp.attemptEmailAddressVerification({
-                code,
-            })
-            console.log("SignUp Attempt:", signUpAttempt)
-            // If verification was completed, set the session to active
-            // and redirect the user
-            if (signUpAttempt.status === 'complete') {
-                await setActive({ session: signUpAttempt.createdSessionId })
-                //router.replace('/')
-                Alert.alert("Sign up complete! Please sign in.")
-
-
-            } else {
-                // If the status is not complete, check why. User may need to
-                // complete further steps.
-                console.log(err)
-                setcodeError(err)
-
-
-            }
-        } catch (err) {
-            // See https://clerk.com/docs/custom-flows/error-handling
-            // for more info on error handling
-            console.log(err)
-            setcodeError(err)
-        }
-    }
-
-    if (pendingVerification) {
-        return (
-            <View style={styles.darkContainer}>
-                <Text style={styles.titleImproved}>Verifica tu correo</Text>
-
-                <Text style={styles.subtitleImproved}>
-                    Ingresa el código que enviamos a tu bandeja de entrada
-                </Text>
-
-                {globalError && (
-                    <View style={styles.errorBoxImproved}>
-                        <Text style={styles.errorBoxText}>{globalError}</Text>
-                    </View>
-                )}
-
-                <View style={styles.codeWrapperImproved}>
-                    <TextInput
-                        style={styles.codeInputImproved}
-                        placeholderTextColor="#9CA3AF"
-                        value={code}
-                        placeholder="Código de verificación"
-                        keyboardType="numeric"
-                        maxLength={6}
-                        onChangeText={(value) => {
-                            setCode(value);
-                            setGlobalError(null);
-                        }}
-                    />
-                    {codeError && <Text style={styles.errorText}>{codeError}</Text>}
-
-                    <TouchableOpacity style={styles.buttonImproved} onPress={onVerifyPress}>
-                        <Text style={styles.buttonImprovedText}>Verificar</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-        )
-    }
 
     return (
         <View style={styles.container}>
@@ -132,7 +62,7 @@ export default function SignUpScreen() {
 
             {globalError && (
                 <View style={styles.errorBox}>
-                    <Text style={styles.errorBoxText}>{globalError}</Text>
+                    <Text style={styles.errorText}>{globalError}</Text>
                 </View>
             )}
 

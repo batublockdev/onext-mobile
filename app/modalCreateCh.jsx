@@ -1,20 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
+    FlatList,
     Modal,
-    View,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    FlatList,
-    StyleSheet,
+    View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import LoadingOverlay from "../components/loadingCompnent";
-import { Keypair } from "stellar-sdk";
-import ConfirmationMessage from "../components/ConfimationComponent";
 import { ERROR_MESSAGES } from "../components/error";
-import PinVerification from "../components/pin";
-import { teamLogos } from "../components/teamLogos";
+import LoadingOverlay from "../components/loadingCompnent";
 import { useApp } from "./contextUser";
 const {
     set_private_bet,
@@ -22,7 +18,7 @@ const {
 } = require("../SmartContract/smartcontractOperation");
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function BetRoomModal({ visible, onClose, game }) {
-    const [friendCode, setFriendCode] = useState("");
+    const [friendCode, setFriendCode] = useState("901826608193");
     const [friends, setFriends] = useState([]);
     const [usersPubk, setUsersPubk] = useState([]);
     const [users, setUsers] = useState([]);
@@ -92,7 +88,10 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     newUser.name = data[0].username;
                     newUser.id = data[0].user_id;
                     newUser.code = data[0].id_app;
-                    setUsers((prev) => [...prev, newUser]);
+                    setUsers((prev) => {
+                        const updated = [...prev, newUser]; // add new value
+                        return [...new Set(updated)];               // remove duplicates
+                    });
                     setUsersPubk((prev) => {
                         const updated = [...prev, data[0].pub_key]; // add new value
                         return [...new Set(updated)];               // remove duplicates
@@ -420,7 +419,7 @@ const styles = StyleSheet.create({
         padding: 24,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-
+        paddingBottom: 80,
         borderWidth: 1,
         borderColor: "#1E252D",
 

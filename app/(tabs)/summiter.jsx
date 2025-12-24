@@ -5,6 +5,7 @@ import { Modal, Share, StyleSheet, Text, TouchableOpacity, View } from "react-na
 import QRCode from "react-native-qrcode-svg";
 import { useSignOut } from "../(auth)/signout";
 import PrivateKeyImport from "../../components/importprivatekey";
+import { supabase } from "../../lib/supabase";
 import { useApp } from '../contextUser';
 
 export default function ProfileScreen() {
@@ -36,25 +37,7 @@ export default function ProfileScreen() {
 
     }, []);
     const handleDeleteAccount = async () => {
-        fetch(`https://api.clerk.com/v1/users/${userx[0].user_id}`, {
-            method: "DELETE",
-            headers: {
-                "Authorization": `Bearer sk_test_in2wjAnwP0hWQs6NFcMlmOgtoaqQFKlfrUkKTwinkM`,
-                "Content-Type": "application/json",
-            },
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Error: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("User deleted:", data);
-            })
-            .catch(error => {
-                console.log("Failed to delete user:", error);
-            });
+
         try {
 
             const response = await fetch('https://backendtrustapp-production.up.railway.app/deleteUser', {
@@ -70,6 +53,7 @@ export default function ProfileScreen() {
                 return;
             }
             const data = await response.json();
+            supabase.auth.signOut();
             console.log('User data deleted successfully:', data);
             setUserx([])
             setKeypair()
@@ -86,7 +70,16 @@ export default function ProfileScreen() {
     const handleShare = async () => {
         try {
             await Share.share({
-                message: `Manito mira mi id: ${userx ? userx[0].id_app : 'N/A'} meteme a la vaina`,
+                message: `${userx ? userx[0].id_app : 'N/A'}`,
+            });
+        } catch (error) {
+            console.log("Error sharing:", error);
+        }
+    };
+    const handleShareAddress = async () => {
+        try {
+            await Share.share({
+                message: `${userx ? userx[0]?.pub_key : 'N/A'}`,
             });
         } catch (error) {
             console.log("Error sharing:", error);
@@ -172,11 +165,8 @@ export default function ProfileScreen() {
 
                     {/* Actions */}
                     <View style={styles.actionRow}>
-                        <TouchableOpacity style={styles.actionBtn}>
-                            <Ionicons name="copy-outline" size={22} color="#35D787" />
-                        </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.actionBtn}>
+                        <TouchableOpacity onPress={handleShareAddress} style={styles.actionBtn}>
                             <Ionicons name="share-outline" size={22} color="#35D787" />
                         </TouchableOpacity>
                     </View>
@@ -187,7 +177,7 @@ export default function ProfileScreen() {
                     {/* Log Out */}
                     <TouchableOpacity
                         style={styles.logoutBtn}
-                        onPress={() => { signOutUser(); setKeypair(null); }}
+                        onPress={() => { supabase.auth.signOut(); setKeypair(null); }}
                     >
                         <Text style={styles.logoutTxt}>Cerrar sesión</Text>
                     </TouchableOpacity>

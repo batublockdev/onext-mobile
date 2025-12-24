@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-react";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -6,11 +5,12 @@ import { useSignOut } from "../(auth)/signout";
 import AppError from '../../components/e404';
 import MatchesScreen from '../../components/game';
 import MatchCard from '../../components/MatchCard';
+import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../contextUser';
 import BetRoomModal from '../modalCreateCh';
+
 const HomeScreen = () => {
-    const { ensureTrustline, startDeposit } = require('../../anchor/anchor');
-    const { decryptOnly } = require('../../self-wallet/wallet');
+
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // null | "success" | "error"
     const [USDCBalance, setUSDCBalance] = useState("0"); // null | "success" | "error"
@@ -18,7 +18,6 @@ const HomeScreen = () => {
     const [loadingMessage, setLoadingMessage] = useState('...');
     const [reason, setReason] = useState(null);
     const [myMachesvar, setmyMachesvar] = useState([]);
-    const [myMachesSupremevar, setmyMachesSupremevar] = useState([]);
 
     const [idcode, setidcode] = useState("N/A");
     const [position, setposition] = useState("0");
@@ -28,28 +27,29 @@ const HomeScreen = () => {
     const [dataModalVisible, setdataModalVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
-
+    const { session } = useAuth()
     const router = useRouter();
 
     const [depositUrl, setDepositUrl] = useState(null);
     const { signOutUser } = useSignOut();
-    const { isSignedIn, user, isLoaded } = useUser();
     const { userx, setUserx } = useApp();
     const StellarSdk = require("stellar-sdk");
-    const userId = user ? user.id : null;
+    const userId = session ? session.user.id : null;
     const server = new StellarSdk.Horizon.Server(
         "https://horizon-testnet.stellar.org",
     );
+    const seen = new Set();
+
 
     const USDCasset = new StellarSdk.Asset("USD", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
     const TrustAsset = new StellarSdk.Asset("TRUST", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
     useEffect(() => {
         const load = async () => {
             try {
+                setmyMachesvar([]);
                 UserBalance();
 
                 fetchRooms();
-                setmyMachesvar([]);
             } catch (e) {
                 console.log("Startup error:", e);
             }
@@ -61,10 +61,10 @@ const HomeScreen = () => {
     useEffect(() => {
         const load = async () => {
             try {
+                setmyMachesvar([]);
                 UserBalance();
 
                 fetchRooms();
-                setmyMachesvar([]);
             } catch (e) {
                 console.log("Startup error:", e);
             }
@@ -231,7 +231,7 @@ const HomeScreen = () => {
     const myMaches = async (rooms) => {
         const now = new Date();
         for (let i = 0; i < rooms.length; i++) {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${rooms[i].room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${rooms[i].room_id}`);
             const data = await res.json();
             console.log("my match data:", data);
             const startGame = new Date(data[0].start_time);
@@ -257,7 +257,7 @@ const HomeScreen = () => {
                     team2: rooms[i].away_team_name,
                     logo1: rooms[i].local_team_logo,
                     logo2: rooms[i].away_team_logo,
-                    reason: "Devolución",
+                    reason: "Disolver",
                     howmuch: formattedUsd,
                     gameState: "cobrar"
                 }
@@ -281,7 +281,7 @@ const HomeScreen = () => {
                         team2: rooms[i].away_team_name,
                         logo1: rooms[i].local_team_logo,
                         logo2: rooms[i].away_team_logo,
-                        reason: "Devolución",
+                        reason: "Disolver",
                         howmuch: formattedUsd,
                         gameState: "cobrar"
                     }
@@ -347,7 +347,7 @@ const HomeScreen = () => {
                                     team2: rooms[i].away_team_name,
                                     logo1: rooms[i].local_team_logo,
                                     logo2: rooms[i].away_team_logo,
-                                    reason: "Cobrar",
+                                    reason: "Ejecutar",
                                     howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                                         .toFixed(6)
                                         .replace(/\.?0+$/, "")} usd`,
@@ -446,7 +446,7 @@ const HomeScreen = () => {
 
                         <View style={{ marginLeft: 10 }}>
 
-                            <Text style={styles.username}>{user.firstName}</Text>
+                            <Text style={styles.username}>{session.user.user_metadata.name}</Text>
                             <Text style={styles.userId}>ID: {idcode}</Text>
                         </View>
                     </TouchableOpacity>
@@ -467,9 +467,19 @@ const HomeScreen = () => {
                 {/* My Matches */}
                 <Section title="My Matches">
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
-                        {myMachesvar.map((m) => (
-                            <MatchCard goToGameDetail={goGameResult} key={m.roomid} data={m} />
-                        ))}
+                        {myMachesvar
+                            .filter(m => {
+                                if (seen.has(m.roomid)) return false;
+                                seen.add(m.roomid);
+                                return true;
+                            })
+                            .map(m => (
+                                <MatchCard
+                                    goToGameDetail={goGameResult}
+                                    key={m.roomid}
+                                    data={m}
+                                />
+                            ))}
                     </ScrollView>
 
                 </Section>

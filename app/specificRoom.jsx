@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -9,6 +8,7 @@ import LoadingOverlay from "../components/loadingCompnent";
 import { teamColorsByID } from "../components/TeamColor";
 import TeamShield from "../components/TeamShield";
 import TrustFullScreenLoading from "../components/TrustFullScreenLoading";
+import { useAuth } from '../context/AuthContext';
 import { useApp } from "./contextUser";
 const {
     place_bet,
@@ -23,7 +23,7 @@ export default function RoomDetail({ }) {
     const router = useRouter();
     const [loadingx, setIsLoading] = useState(false);
 
-    const { isSignedIn, user, isLoaded } = useUser();
+    const { session } = useAuth()
 
     const [rooms, setRooms] = useState([]);
     const [canClaimRefund, setcanClaimRefund] = useState(false);
@@ -74,7 +74,7 @@ export default function RoomDetail({ }) {
         const load = async () => {
             try {
                 fetchRooms();
-                console.log("User ID in Rooms:", user.id);
+                console.log("User ID in Rooms:", session.user.id);
 
             } catch (e) {
                 console.log("Startup error:", e);
@@ -377,8 +377,12 @@ export default function RoomDetail({ }) {
     }
     const fetchRooms = async () => {
         console.log("Fetching room details for room ID:", params.room_id);
+        if (params.room_id == null || params.room_id == undefined || params.room_id == 0) {
+            router.push({ pathname: "/rooms" });
+            return
+        }
         try {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${user.id}&room_id=${params.room_id}`);
+            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${params.room_id}`);
             const data = await res.json();
 
             setRooms(data[0]);

@@ -11,16 +11,17 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@clerk/clerk-expo": "^2.15.3",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
     "@iarna/toml": "^2.2.5",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@scure/bip39": "^2.0.1",
     "@stellar/stellar-sdk": "^14.2.0",
     "@stellar/typescript-wallet-sdk": "^1.9.0",
+    "@supabase/supabase-js": "^2.87.1",
     "base64-arraybuffer": "^1.0.2",
     "bip39": "^3.1.0",
     "buffer": "^6.0.3",

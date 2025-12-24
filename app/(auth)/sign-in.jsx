@@ -1,13 +1,12 @@
-import { useSignIn } from '@clerk/clerk-expo';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from "expo-status-bar";
 import React from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Onboarding from '../../components/onboarding';
+import { supabase } from '../../lib/supabase';
 
 export default function Page() {
-    const { signIn, setActive, isLoaded } = useSignIn()
     const router = useRouter()
     const [emailError, setEmailError] = React.useState(null);
     const [Onboardingx, setOnboarding] = React.useState(true);
@@ -22,7 +21,6 @@ export default function Page() {
         setEmailError(null);
         setPasswordError(null);
         setGlobalError(null);
-        if (!isLoaded) return
         if (!emailAddress) {
             setEmailError("Email is required.");
 
@@ -36,22 +34,17 @@ export default function Page() {
 
         // Start the sign-in process using the email and password provided
         try {
-            const signInAttempt = await signIn.create({
-                identifier: emailAddress,
-                password,
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: emailAddress,
+                password: password,
             })
 
             // If sign-in process is complete, set the created session as active
             // and redirect the user
-            if (signInAttempt.status === 'complete') {
-                await setActive({ session: signInAttempt.createdSessionId })
-                router.replace('/')
-            } else {
-                // If the status isn't complete, check why. User might need to
-                // complete further steps.
-                Alert.alert("Sign in failed. Please try again.")
-            }
+            if (error) Alert.alert(error.message)
         } catch (err) {
+            console.log(err)
+
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
             setGlobalError("Invalid email or password.");
@@ -61,23 +54,16 @@ export default function Page() {
         console.log("Entrando como invitado...");
         //Testing account 
 
-        const signInAttempt = await signIn.create({
-            identifier: "banguardos@gmail.com",
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: "banguardos@gmail.com",
             password: "Trust35000",
         })
 
         // If sign-in process is complete, set the created session as active
         // and redirect the user
-        if (signInAttempt.status === 'complete') {
-            await setActive({ session: signInAttempt.createdSessionId })
-            setOnboarding(false)
+        if (error) Alert.alert("Tenemos problemas al entrar como invitado, registrate o intentalo mas tarde")
 
-            router.replace('/')
-        } else {
-            // If the status isn't complete, check why. User might need to
-            // complete further steps.
-            Alert.alert("Tenemos problemas al entrar como invitado, registrate o intentalo mas tarde")
-        }
     };
     if (Onboardingx) {
         return <Onboarding onLoginPress={() => setOnboarding(false)} onGuestPress={onGuestPress} />

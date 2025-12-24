@@ -36,27 +36,27 @@ export default function Onboarding({ onLoginPress, onGuestPress }) {
     const flatListRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // Auto-slide
+    const intervalRef = useRef(null);
+
     useEffect(() => {
-        const load = async () => {
-            try {
-                const interval = setInterval(() => {
-                    const nextIndex = (currentIndex + 1) % slides.length;
-                    flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-                    setCurrentIndex(nextIndex);
-                }, 8000);
+        intervalRef.current = setInterval(() => {
+            const nextIndex = (currentIndex + 1) % slides.length;
 
-                return () => clearInterval(interval);
-            } catch (e) {
-                console.log("Startup error:", e);
-            }
-        };
-        load();
+            flatListRef.current?.scrollToIndex({
+                index: nextIndex,
+                animated: true,
+            });
 
+            setCurrentIndex(nextIndex);
+        }, 8000); // 8 seconds (80000 was too much anyway)
+
+        return () => clearInterval(intervalRef.current);
     }, [currentIndex]);
 
     const onScroll = event => {
-        const index = Math.round(event.nativeEvent.contentOffset.x / width);
+        const index = Math.round(
+            event.nativeEvent.contentOffset.x / width
+        );
         setCurrentIndex(index);
     };
 
@@ -116,7 +116,7 @@ export default function Onboarding({ onLoginPress, onGuestPress }) {
                         style={styles.termsLink}
                         onPress={() =>
                             Linking.openURL(
-                                "https://drive.google.com/file/d/1Io13TqCrTLiI4I3tdt6MRbKKb-CVNEtz/view"
+                                "https://landing-page-trustapp.vercel.app/terminos-y-condiciones"
                             )
                         }
                     >

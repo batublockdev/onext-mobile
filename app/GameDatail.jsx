@@ -177,7 +177,7 @@ export default function GameDetails({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_game: match.match_id, honest1, honest2, adm: match.adm, externalUser: match.externalUser, result: result, distributed: false, honest1_cliam: false, honest2_cliam: false }), // send your user ID here
+                    body: JSON.stringify({ id_game: match.match_id, honest1, honest2, adm: match.adm, externalUser: match.externalUser, result: result, distributed: false, honest1_claim: false, honest2_claim: false }), // send your user ID here
                 });
 
                 if (!response.ok) {

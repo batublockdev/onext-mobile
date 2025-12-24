@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Linking, StyleSheet } from "react-native";
+import { useState } from "react";
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import DisclaimerModal from "../../components/disclaimer";
 
 const LegalMenu = () => {
@@ -13,14 +13,14 @@ const LegalMenu = () => {
 
             <TouchableOpacity style={styles.menuBtn} onPress={() =>
                 Linking.openURL(
-                    "https://drive.google.com/file/d/1lGjemYjAtnLJmY79kd_8lHSNkwggjyXY/view"
+                    "https://landing-page-trustapp.vercel.app/politica-de-privacidad"
                 )
             }>
                 <Text style={styles.menuBtnText}>Política de Privacidad</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuBtn} onPress={() => Linking.openURL(
-                "https://drive.google.com/file/d/1Io13TqCrTLiI4I3tdt6MRbKKb-CVNEtz/view"
+                "https://landing-page-trustapp.vercel.app/terminos-y-condiciones"
             )}>
                 <Text style={styles.menuBtnText}>Términos y Condiciones</Text>
             </TouchableOpacity>
@@ -30,7 +30,7 @@ const LegalMenu = () => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuBtn} onPress={() => Linking.openURL(
-                "https://stellar.expert/explorer/testnet/contract/CCAY5HOH47O5IVZQV6XCLV7NXAN7ST7LNRFXYM6TJ47CUBGANLWDN57G"
+                "https://stellar.expert/explorer/testnet/contract/CC5ZASMEMSKWBDRNDVR72SGP2V4FQ722OKIVIHCVMPXFLH5YL5FXN2VU"
             )}>
                 <Text style={styles.menuBtnText}>Smart contrato</Text>
             </TouchableOpacity>
