@@ -47,7 +47,7 @@ export default function RoomDetail({ }) {
 
 
     const [teamSelected, setteamSelected] = useState(null);   // e.g. "Team_local"
-    const [teamSelectedlogo, setteamSelectedlogo] = useState(null);   // e.g. "Team_local"
+    const [teamSelectedlogo, setteamSelectedlogo] = useState([]);   // e.g. "Team_local"
 
     const [matchResult, setMatchResult] = useState(null);   // e.g. "Team_local"
     const [userDecision, setUserDecision] = useState(null); // "accepted" or "rejected"
@@ -532,7 +532,7 @@ export default function RoomDetail({ }) {
                             setMessage("Acuerdo completado");
                         }
                     } else {
-                        setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
+                        setMessage("La communidad ha estado en desacuerdo con tu opinion ");
                     }
 
                 } else {
@@ -542,7 +542,7 @@ export default function RoomDetail({ }) {
                             setMessage("Acuerdo completado");
                         }
                     } else {
-                        setMessage("La communidad ha estado en desacuerdo con tu opinion, no puedes reclamar esta recompensa ");
+                        setMessage("La communidad ha estado en desacuerdo con tu opinion ");
                     }
 
                 }
@@ -569,8 +569,8 @@ export default function RoomDetail({ }) {
         active: rooms.active === "true" || rooms.active === true,
         bet: rooms.user_bet,
         users: rooms.room_users ? rooms.room_users : [],
-        color1: id1 != 0 ? teamColorsByID[id1].colors : teamColorsByID[21].colors,
-        color2: id2 != 0 ? teamColorsByID[id2].colors : teamColorsByID[21].colors,
+        color1: rooms.local_team_colors,
+        color2: rooms.away_team_colors,
 
     };
     function parseContractError(error) {
@@ -647,10 +647,10 @@ export default function RoomDetail({ }) {
         setSelected(option);
         if (option == "Team_local") {
             setteamSelected(room.local_team_name);
-            setteamSelectedlogo(rooms.local_team_id);
+            setteamSelectedlogo(rooms.local_team_colors);
         } else if (option == "Team_away") {
             setteamSelected(room.away_team_name);
-            setteamSelectedlogo(rooms.away_team_id);
+            setteamSelectedlogo(rooms.away_team_colors);
         }
         setreadytoSend(true);
     };
@@ -704,7 +704,7 @@ export default function RoomDetail({ }) {
                 <View style={styles.teamsRow}>
                     <View style={styles.teamBox}>
                         <TeamShield
-                            colors={color1}
+                            colors={room.color1}
                             width={80}
                             height={96}
                         />
@@ -715,7 +715,7 @@ export default function RoomDetail({ }) {
 
                     <View style={styles.teamBox}>
                         <TeamShield
-                            colors={color2}
+                            colors={room.color2}
                             width={80}
                             height={96}
                         />

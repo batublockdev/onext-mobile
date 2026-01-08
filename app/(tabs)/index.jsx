@@ -164,8 +164,8 @@ const HomeScreen = () => {
                                 week: result[i].fecha,
                                 team1: result[i].local_team_name,
                                 team2: result[i].away_team_name,
-                                logo1: result[i].local_team_logo,
-                                logo2: result[i].away_team_logo,
+                                logo1: result[i].local_team_colors,
+                                logo2: result[i].away_team_colors,
                                 reason: "Resultado",
                                 honest1: result[i].honest1,
                                 honest2: result[i].honest2,
@@ -190,8 +190,8 @@ const HomeScreen = () => {
                         week: result[i].fecha,
                         team1: result[i].local_team_name,
                         team2: result[i].away_team_name,
-                        logo1: result[i].local_team_logo,
-                        logo2: result[i].away_team_logo,
+                        logo1: result[i].local_team_colors,
+                        logo2: result[i].away_team_colors,
                         reason: "Cobrar",
                         honest1: result[i].honest1,
                         honest2: result[i].honest2,
@@ -215,7 +215,7 @@ const HomeScreen = () => {
         if (type == 1) {
             router.push({
                 pathname: "/GameDatail",
-                params: { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed },
+                params: { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1: JSON.stringify(logo1), logo2: JSON.stringify(logo2), reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed },
             });
         } else if (type == 0) {
             router.push({
@@ -255,8 +255,8 @@ const HomeScreen = () => {
                     week: rooms[i].fecha,
                     team1: rooms[i].local_team_name,
                     team2: rooms[i].away_team_name,
-                    logo1: rooms[i].local_team_logo,
-                    logo2: rooms[i].away_team_logo,
+                    logo1: rooms[i].local_team_colors,
+                    logo2: rooms[i].away_team_colors,
                     reason: "Disolver",
                     howmuch: formattedUsd,
                     gameState: "cobrar"
@@ -279,8 +279,8 @@ const HomeScreen = () => {
                         week: rooms[i].fecha,
                         team1: rooms[i].local_team_name,
                         team2: rooms[i].away_team_name,
-                        logo1: rooms[i].local_team_logo,
-                        logo2: rooms[i].away_team_logo,
+                        logo1: rooms[i].local_team_colors,
+                        logo2: rooms[i].away_team_colors,
                         reason: "Disolver",
                         howmuch: formattedUsd,
                         gameState: "cobrar"
@@ -300,8 +300,8 @@ const HomeScreen = () => {
                             week: rooms[i].fecha,
                             team1: rooms[i].local_team_name,
                             team2: rooms[i].away_team_name,
-                            logo1: rooms[i].local_team_logo,
-                            logo2: rooms[i].away_team_logo,
+                            logo1: rooms[i].local_team_colors,
+                            logo2: rooms[i].away_team_colors,
                             reason: "Resultado",
                             howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                                 .toFixed(6)
@@ -345,8 +345,8 @@ const HomeScreen = () => {
                                     week: rooms[i].fecha,
                                     team1: rooms[i].local_team_name,
                                     team2: rooms[i].away_team_name,
-                                    logo1: rooms[i].local_team_logo,
-                                    logo2: rooms[i].away_team_logo,
+                                    logo1: rooms[i].local_team_colors,
+                                    logo2: rooms[i].away_team_colors,
                                     reason: "Ejecutar",
                                     howmuch: `${(parseFloat(data[0].min_amount) / 10_000_000)
                                         .toFixed(6)

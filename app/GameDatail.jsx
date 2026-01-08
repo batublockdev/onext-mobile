@@ -26,7 +26,7 @@ export default function GameDetails({ }) {
     const [loadingx, setIsLoading] = useState(false);
 
     const [needsCorrection, setNeedsCorrection] = useState(false);
-
+    console.log("match.logo1", match.logo1);
 
     let winner = match.result;
     if (match.result == "Team_local") {
@@ -250,7 +250,7 @@ export default function GameDetails({ }) {
                     {/* LOCAL */}
                     <View style={styles.teamSection}>
                         <TeamShield
-                            colors={teamColorsByID[match.localid].colors}
+                            colors={JSON.parse(match.logo1)}
                             width={45}
                             height={61}
                         />
@@ -263,7 +263,7 @@ export default function GameDetails({ }) {
                     {/* AWAY */}
                     <View style={styles.teamSection}>
                         <TeamShield
-                            colors={teamColorsByID[match.awayid].colors}
+                            colors={JSON.parse(match.logo2)}
                             width={45}
                             height={61}
                         />

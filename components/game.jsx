@@ -69,7 +69,7 @@ const MatchesScreen = ({ onOpen }) => {
             {/* Left team */}
             <View style={styles.teamSection}>
                 <TeamShield
-                    colors={teamColorsByID[item.local_team_id].colors}
+                    colors={item.local_team_colors}
                     width={30}
                     height={46}
                 />
@@ -85,7 +85,7 @@ const MatchesScreen = ({ onOpen }) => {
             {/* Right team */}
             <View style={styles.teamSectionRight}>
                 <TeamShield
-                    colors={teamColorsByID[item.away_team_id].colors}
+                    colors={item.away_team_colors}
                     width={30}
                     height={46}
                 />

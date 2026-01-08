@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function GlobalBanner() {
     return (
         <View style={styles.banner}>
-            <Text style={styles.bannerText}>  Version de prueba 1.0.1</Text>
+            <Text style={styles.bannerText}>  Version 1.0.1</Text>
         </View>
     );
 }

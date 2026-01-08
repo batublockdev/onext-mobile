@@ -54,7 +54,7 @@ export default function MatchCard({ data, goToGameDetail }) {
 
             <View style={styles.row}>
                 <TeamShield
-                    colors={teamColorsByID[localid].colors}
+                    colors={logo1}
                     width={45}
                     height={61}
                 />
@@ -73,7 +73,7 @@ export default function MatchCard({ data, goToGameDetail }) {
                     )}
                 </View>
                 <TeamShield
-                    colors={teamColorsByID[awayid].colors}
+                    colors={logo2}
                     width={45}
                     height={61}
                 />

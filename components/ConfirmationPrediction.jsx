@@ -74,7 +74,7 @@ export default function ConfirmPrediction({
             {/* Team */}
             <View style={styles.teamContainer}>
                 <TeamShield
-                    colors={teamColorsByID[teamid].colors}
+                    colors={teamid}
                     width={45}
                     height={51}
                 />

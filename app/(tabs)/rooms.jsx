@@ -178,8 +178,8 @@ export default function Rooms() {
             let profitCop = await getUsdToCop(data[i].min_amount / 10000000);
 
             const a = {
-                teamColor1: teamColorsByID[data[i].local_team_id].colors,
-                teamColor2: teamColorsByID[data[i].away_team_id].colors,
+                teamColor1: data[i].local_team_colors,
+                teamColor2: data[i].away_team_colors,
                 away_team_logo: data[i].away_team_logo,
                 team1: data[i].away_team_name,
                 fecha: 15,

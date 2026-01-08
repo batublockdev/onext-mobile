@@ -1,7 +1,7 @@
 export default {
 
     expo: {
-        "name": "mobile",
+        "name": "trustapp1xt",
         "slug": "mobile",
         "version": "1.0.0",
         "orientation": "portrait",
