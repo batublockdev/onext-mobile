@@ -1,15 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ConfirmationMessage from "../components/ConfimationComponent";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ERROR_MESSAGES } from "../components/error";
-import PinVerification from "../components/pin";
-import { teamLogos } from "../components/teamLogos";
-import { useApp } from "./contextUser";
 import LoadingOverlay from "../components/loadingCompnent";
 import TeamShield from "../components/TeamShield";
-import { teamColorsByID } from "../components/TeamColor";
+import { useApp } from "./contextUser";
 const {
     setResult_supremCourt,
     AssestResult_supremCourt,
@@ -88,12 +84,22 @@ export default function GameDetails({ }) {
 
             const usd = BigInt(valUsd.lo._value);
             const trust = BigInt(valTrust.lo._value);
-            let claim1 = false;
-            let claim2 = false;
-            if (match.honest1 == userx[0].pub_key && (match.honest1_cliam == false || !match.honest1_cliam)) {
+            console.log(match.honest1_claim)
+            console.log(match.honest2_claim)
+            console.log(match.honest1);
+            console.log(match.honest2);
+            console.log(userx[0].pub_key);
+
+            let claim1 = match.honest1_claim;
+            let claim2 = match.honest2_claim;
+            if (match.honest1 == userx[0].pub_key && match.honest1_claim == "false") {
+                console.log("The First one")
+
                 claim1 = true;
-            } else if (match.honest2 == userx[0].pub_key && (match.honest2_cliam == false || !match.honest2_cliam)) {
+            } else if (match.honest2 == userx[0].pub_key && match.honest2_claim == "false") {
+                console.log("The second one")
                 claim2 = true;
+
             }
             const amountUsd = (Number(usd) / 10_000_000).toFixed(2);
             const amountTrust = (Number(trust) / 10_000_000).toFixed(2);
@@ -103,7 +109,7 @@ export default function GameDetails({ }) {
 
                 setLoadingMessage("Saving user data...");
                 try {
-                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
+                    const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updatesupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -172,7 +178,7 @@ export default function GameDetails({ }) {
             }
             setLoadingMessage("Saving user data...");
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updatesupreme', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

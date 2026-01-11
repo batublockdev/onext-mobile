@@ -32,7 +32,7 @@ const TabsLayout = () => {
             if (session) {
 
                 try {
-                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/user', {
+                    const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/user', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -50,7 +50,9 @@ const TabsLayout = () => {
                     setUserx(data);
                     // Update context with new user dataif()
                     if (session.user.id == "96440fdf-da59-4bcb-8005-9b659bd65625") {
-                        handlePinComplete("0000")
+                        //handlePinComplete("0000")
+                        handleClick(data);
+
                     } else {
                         handleClick(data);
 

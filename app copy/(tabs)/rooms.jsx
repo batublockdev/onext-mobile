@@ -77,7 +77,7 @@ export default function Rooms() {
 
     const fetchRooms = async () => {
         try {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/rooms?user_id=${userId}`);
+            const res = await fetch(`https://trustappbackendlive-production.up.railway.app/api/rooms?user_id=${userId}`);
             const data = await res.json();
             console.log("Fetched rooms:", data);
             status(data);

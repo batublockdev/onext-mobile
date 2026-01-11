@@ -1,10 +1,7 @@
-import { useRouter } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { teamLogos } from "./teamLogos";
-import { teamColorsByID } from "./TeamColor";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import TeamShield from "./TeamShield";
 export default function MatchCard({ data, goToGameDetail }) {
-    const { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed } = data;
+    const { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed, honest1_claim, honest2_claim } = data;
 
     const themes = {
         cobrar: {
@@ -48,7 +45,7 @@ export default function MatchCard({ data, goToGameDetail }) {
 
     return (
 
-        <TouchableOpacity onPress={() => goToGameDetail(roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed)} style={[styles.card, { backgroundColor: theme.bg }]}>
+        <TouchableOpacity onPress={() => goToGameDetail(roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed, honest1_claim, honest2_claim)} style={[styles.card, { backgroundColor: theme.bg }]}>
             <Text style={[styles.league, { color: theme.sub }]}>{league}</Text>
             <Text style={[styles.week, { color: theme.sub }]}>Week {week}</Text>
 

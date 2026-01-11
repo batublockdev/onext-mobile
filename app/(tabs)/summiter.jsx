@@ -40,7 +40,7 @@ export default function ProfileScreen() {
 
         try {
 
-            const response = await fetch('https://backendtrustapp-production.up.railway.app/deleteUser', {
+            const response = await fetch('https://trustappbackendlive-production.up.railway.app/deleteUser', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -53,7 +53,8 @@ export default function ProfileScreen() {
                 return;
             }
             const data = await response.json();
-            supabase.auth.signOut();
+            await supabase.auth.signOut();
+            await supabase.auth.admin.deleteUser(userx[0].user_id);
             console.log('User data deleted successfully:', data);
             setUserx([])
             setKeypair()

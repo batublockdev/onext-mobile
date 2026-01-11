@@ -18,7 +18,7 @@ const {
 } = require("../SmartContract/smartcontractOperation");
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function BetRoomModal({ visible, onClose, game }) {
-    const [friendCode, setFriendCode] = useState("901826608193");
+    const [friendCode, setFriendCode] = useState("");
     const [friends, setFriends] = useState([]);
     const [usersPubk, setUsersPubk] = useState([]);
     const [users, setUsers] = useState([]);
@@ -56,7 +56,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
         };
 
         try {
-            const response = await fetch('https://backendtrustapp-production.up.railway.app/api/userapp', {
+            const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/userapp', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -83,6 +83,10 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     setFriendCodeError("Usa un codico dintisto al tuyo");
                     return
 
+                } else if (usersPubk.includes(data[0].pub_key)) {
+                    setFriendCodeError("Usuario ya agregado");
+                    return
+
                 } else {
 
                     newUser.name = data[0].username;
@@ -96,7 +100,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                         const updated = [...prev, data[0].pub_key]; // add new value
                         return [...new Set(updated)];               // remove duplicates
                     });
-                    setFriends([...friends, { id: Date.now().toString(), name: data[0].username }]);
+                    setFriends([...friends, { id: Date.now().toString(), name: data[0].username, pub_key: data[0].pub_key, newuser: newUser }]);
                     setFriendCode("");
                 }
             }
@@ -107,6 +111,11 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
 
     };
+    const removeUser = (id, pubKey, newuser) => {
+        setUsers((prev) => prev.filter((user) => user !== newuser));
+        setUsersPubk((prev) => prev.filter((key) => key !== pubKey));
+        setFriends(friends.filter((f) => f.id !== id));
+    }
     const handleBeFirstToBet = () => {
         // Navigate to betting screen with roomCode + match info
         console.log("Navigating to specificRoom with roomCode:", roomCode);
@@ -171,7 +180,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             };
             setMsgLoading("Creando");
 
-            const response = await fetch('https://backendtrustapp-production.up.railway.app/sign-game', {
+            const response = await fetch('https://trustappbackendlive-production.up.railway.app/sign-game', {
                 method: 'POST', // must be POST to send body
                 headers: {
                     'Content-Type': 'application/json',
@@ -189,7 +198,10 @@ export default function BetRoomModal({ visible, onClose, game }) {
             setMsgLoading("Enviando a la blockchain");
 
             try {
-                await setGame(description, end, id_game, "20", start, team_away, team_local, sig, keypairUser);
+                const result = await setGame(description, end, id_game, "20", start, team_away, team_local, sig, keypairUser);
+                if (result == undefined) {
+                    throw new Error("❌ Transaction failed");
+                }
             } catch (err) {
                 const { reason, code } = parseContractError(err);
                 if (code === 210) {
@@ -202,7 +214,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
             setMsgLoading("Enviando");
 
             setLoadingMessage("creating private bet settings...");
-            const responsex = await fetch('https://backendtrustapp-production.up.railway.app/api/next', {
+            const responsex = await fetch('https://trustappbackendlive-production.up.railway.app/api/next', {
                 method: 'GET', // must be POST to send body
             });
             if (!responsex.ok) {
@@ -220,11 +232,15 @@ export default function BetRoomModal({ visible, onClose, game }) {
             const usdMicro = Math.round(usd * MICRO_USD);
             console.log("Min bet in micro USD:", usdMicro);
             usd = usdMicro;
-            await set_private_bet(usd, id_game, description, keypairUser.publicKey(), dataid.nextRoomId, keypairUser, usersPubk);
+            const resulx = await set_private_bet(usd, id_game, description, keypairUser.publicKey(), dataid.nextRoomId, keypairUser, usersPubk);
+            console.log("Result sent", resulx)
+            if (resulx == undefined) {
+                throw new Error("❌ Transaction failed");
+            }
             setMsgLoading("Guardando");
 
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertrooms', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/insertrooms', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -318,7 +334,24 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
                     {/* Game title */}
                     <Text style={styles.title}>{parsedMatch.local_team_name} vs {parsedMatch.away_team_name}</Text>
+                    {/* Amount box */}
 
+                    <Text style={styles.label}>Aporte por participante</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={amount}
+                        placeholder="$0"
+                        placeholderTextColor="#999"
+                        keyboardType="numeric"
+                        onChangeText={(text) => {
+                            const formatted = formatCOP(text);
+                            setAmount(formatted);
+                            console.log("Formatted Amount:", formatted);
+                            console.log("Raw Input Amount:", text);
+                            setMinBet(text);
+
+                        }}
+                    />
                     {/* Friend code input */}
                     <Text style={styles.label}>Código de invitación</Text>
                     <View style={styles.row}>
@@ -357,7 +390,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
 
                                 <TouchableOpacity
                                     onPress={() =>
-                                        setFriends(friends.filter((f) => f.id !== item.id))
+                                        removeUser(item.id, item.pub_key, item.newuser)
                                     }
                                 >
                                     <Text style={styles.deleteX}>✕</Text>
@@ -369,23 +402,7 @@ export default function BetRoomModal({ visible, onClose, game }) {
                         }
                     />
 
-                    {/* Amount box */}
-                    <Text style={styles.label}>Aporte por participante</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={amount}
-                        placeholder="$0"
-                        placeholderTextColor="#999"
-                        keyboardType="numeric"
-                        onChangeText={(text) => {
-                            const formatted = formatCOP(text);
-                            setAmount(formatted);
-                            console.log("Formatted Amount:", formatted);
-                            console.log("Raw Input Amount:", text);
-                            setMinBet(text);
 
-                        }}
-                    />
 
                     {/* Submit button */}
                     <TouchableOpacity
@@ -428,7 +445,11 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         shadowOffset: { width: 0, height: -4 },
         elevation: 10,
+
+        height: "85%",        // ✅ controlled bottom-sheet height
+        justifyContent: "flex-start",
     },
+
 
     /* close button */
     closeBtn: {
@@ -459,8 +480,8 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         color: "#A5ADB4",
-        marginTop: 15,
-        marginBottom: 5,
+        marginTop: 12,   // ⬅ was 15
+        marginBottom: 4, // ⬅ tighter grouping
         fontWeight: "600",
     },
     createBtnDisabled: {
@@ -474,7 +495,7 @@ const styles = StyleSheet.create({
         padding: 14,
         borderRadius: 12,
         fontSize: 17,
-        marginTop: 5,
+        marginTop: 2,    // ⬅ was 5
         color: "#FFFFFF",
         borderWidth: 1,
         borderColor: "#1E252D",
@@ -560,7 +581,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#35D787",
         paddingVertical: 15,
         borderRadius: 16,
-        marginTop: 25,
+        marginTop: "auto",   // ✅ pushes button to bottom
     },
 
     createBtnTxt: {

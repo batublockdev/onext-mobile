@@ -22,11 +22,11 @@ global.Buffer = Buffer;
 
 // Configure the SDK to use the `stellar-rpc` instance of your choosing.
 const server = new StellarRpc.Server(
-    "https://soroban-testnet.stellar.org:443",
+    "https://stellar.api.onfinality.io/public",
 );
 
 
-const bettingContractAddress = "CC5ZASMEMSKWBDRNDVR72SGP2V4FQ722OKIVIHCVMPXFLH5YL5FXN2VU";
+const bettingContractAddress = "CA3UB5N7S6XXXHEZGZ6GJU5OVIIX5OQ7TAQ7X65BWY4YK3MWLVZF4ZL3";
 const bettingContract = new Contract(bettingContractAddress);
 
 //fn set_private_bet(user: address, privateData: PrivateBet, game_id: i128)
@@ -97,7 +97,7 @@ async function set_private_bet(min_amount, game_id, description, admin, id, keyp
     ]);
     const id_game = nativeToScVal(game_id, { type: "i128" });
 
-    await funtionExecution("set_private_bet", [
+    return await funtionExecution("set_private_bet", [
         nativeToScVal(Keypair.fromPublicKey(admin).publicKey(), { type: "address" }),
         privateBet, id_game
     ], keypairUser);
@@ -138,7 +138,7 @@ async function place_bet(address, id_bet, game_id, team, amount, setting, keypai
     ]);
 
     // 5. Call the set_game function
-    await funtionExecution("bet", [
+    return await funtionExecution("bet", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         bet,
     ], keypairUser);
@@ -158,7 +158,7 @@ enum AssessmentKey {
 
 
     // 5. Call the set_game function
-    await funtionExecution("AssestResult_supremCourt", [user,
+    return await funtionExecution("AssestResult_supremCourt", [user,
         gameid_sent, desition_sent
     ], keypairUser);
 }
@@ -176,7 +176,7 @@ enum AssessmentKey {
 
 
     // 5. Call the set_game function
-    await funtionExecution("assessResult", [user,
+    return await funtionExecution("assessResult", [user,
         setting_sent, desition_sent
     ], keypairUser);
 }
@@ -214,7 +214,7 @@ async function execute_distribution(setting, keypairUser) {
 
 
     // 5. Call the set_game function
-    await funtionExecution("execute_distribution", [id_setting_sent], keypairUser);
+    return await funtionExecution("execute_distribution", [id_setting_sent], keypairUser);
 }
 async function setResult_supremCourt(address, description, game_id, team, keypairUser) {
     //setResult_supremCourt(user: address, result: ResultGame) -> bool    //await mint_usdc(address, amount);
@@ -267,7 +267,7 @@ struct ResultGame {
     ]);
 
     // 5. Call the set_game function
-    await funtionExecution("setResult_supremCourt", [
+    return await funtionExecution("setResult_supremCourt", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         result,
     ], keypairUser);
@@ -324,7 +324,7 @@ struct ResultGame {
     ]);
 
     // 5. Call the set_game function
-    await funtionExecution("summitResult", [
+    return await funtionExecution("summitResult", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         nativeToScVal(setting, { type: "i128" }),
         result,
@@ -345,16 +345,7 @@ async function setGame(description, endTime, id, league, startTime, team_away, t
         team_away,
         team_local
     );
-    /*const game = await set_GameStruct(
-        "Team A vs Team B",
-        1700000000, // endTime
-        "112", // id as string
-        "1", // league as string
-        1690000000, // startTime
-        publicKey, // summiter address
-        "100", // team_away as string
-        "200"  // team_local as string
-    );*/
+
 
 
     // 2. Encode game into raw XDR bytes for signing
@@ -370,7 +361,7 @@ async function setGame(description, endTime, id, league, startTime, team_away, t
     const signature = xdr.ScVal.scvBytes(signatureRaw);
 
     // 5. Call the set_game function
-    await funtionExecution("set_game", [game, signature], keyuser);
+    return await funtionExecution("set_game", [game, signature], keyuser);
 
 }
 async function request_result_summiter(address, amount, keyuser) {
@@ -378,7 +369,7 @@ async function request_result_summiter(address, amount, keyuser) {
     //await mint_usdc(address, amount);
 
     // 5. Call the set_game function
-    await funtionExecution("request_result_summiter", [
+    return await funtionExecution("request_result_summiter", [
         nativeToScVal(Keypair.fromPublicKey(address).publicKey(), { type: "address" }),
         nativeToScVal(amount, { type: "i128" }),
     ], keyuser);
@@ -389,10 +380,10 @@ async function buildTransation(funtionName, params, sourceKeypair) {
     // 6. Build transaction
     const tx = new TransactionBuilder(sourceAccount, {
         fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET,
+        networkPassphrase: Networks.PUBLIC,
     })
         .addOperation(bettingContract.call(funtionName, ...params))
-        .setTimeout(30)
+        .setTimeout(120)
         .build();
 
     // 7. Sign transaction
@@ -422,12 +413,31 @@ async function sendTransaction(preparedTransaction) {
         if (sendResponse.status === "PENDING") {
             let getResponse = await server.getTransaction(sendResponse.hash);
             // Poll `getTransaction` until the status is not "NOT_FOUND"
-            while (getResponse.status === "NOT_FOUND") {
-                console.log("Waiting for transaction confirmation...");
-                // See if the transaction is complete
+
+
+            const MAX_WAIT_MS = 30_000; // 30 seconds
+            const POLL_INTERVAL_MS = 1_000;
+
+            const startTime = Date.now();
+
+            while (true) {
                 getResponse = await server.getTransaction(sendResponse.hash);
-                // Wait one second
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+
+                if (getResponse.status === "SUCCESS") {
+                    console.log("✅ Transaction confirmed");
+                    break;
+                }
+
+                if (getResponse.status === "FAILED") {
+                    throw new Error("❌ Transaction failed");
+                }
+
+                if (Date.now() - startTime > MAX_WAIT_MS) {
+                    throw new Error("⏱️ Transaction confirmation timeout");
+                }
+
+                console.log("Waiting for transaction confirmation...");
+                await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
             }
 
             //console.log(`getTransaction response: ${JSON.stringify(getResponse)}`);
@@ -509,8 +519,8 @@ async function funtionExecution(functionName, paramsFunc, sourceKeypair) {
     const simResponse = await simulateTransaction(tx);
     const preparedTransaction = await prepareTransaction(tx, sourceKeypair);
     const result = await sendTransaction(preparedTransaction);
-    console.log('result:', result);
-    return result;
+    console.log('result:', result._value);
+    return result._value;
 }
 //setGame();
 

@@ -5,7 +5,6 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import ConfirmPrediction from "../components/ConfirmationPrediction";
 import { ERROR_MESSAGES } from "../components/error";
 import LoadingOverlay from "../components/loadingCompnent";
-import { teamColorsByID } from "../components/TeamColor";
 import TeamShield from "../components/TeamShield";
 import TrustFullScreenLoading from "../components/TrustFullScreenLoading";
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +32,8 @@ export default function RoomDetail({ }) {
     const [loading, setLoading] = useState(true);
 
     const [fee, setFee] = useState("");
+    const [amountAgree, setAmountAgree] = useState("");
+
 
     const [LastPred, setLastPred] = useState(null);
 
@@ -106,7 +107,7 @@ export default function RoomDetail({ }) {
             //async function claim(address, setting, claimType, keypairUser)
             const value = await claim(userx[0].pub_key, params.room_id, "User", keypairUser);
             console.log("Resultado claim: ", value)
-            const valueItems = value._value;
+            const valueItems = value;
             const valUsd = valueItems[0]._value._attributes;
             const valTrust = valueItems[1]._value._attributes;
 
@@ -136,7 +137,7 @@ export default function RoomDetail({ }) {
 
 
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ export default function RoomDetail({ }) {
 
             const value = await claim_refund(userx[0].pub_key, params.room_id, keypairUser);
             console.log("Resultado claim: ", value)
-            const valueItems = value._value;
+            const valueItems = value;
             const valUsd = valueItems[0]._value._attributes;
             const valTrust = valueItems[1]._value._attributes;
 
@@ -197,7 +198,7 @@ export default function RoomDetail({ }) {
                 setMsgLoading(` + ${cop} `)
 
             } else {
-                let copTrust = await getUsdToCop(amountUsd);
+                let copTrust = await getUsdToCop(amountTrust);
 
                 setMsgLoading(` + ${cop} y + ${copTrust} `)
 
@@ -206,7 +207,7 @@ export default function RoomDetail({ }) {
             /** we got to show all the info */
 
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -236,7 +237,7 @@ export default function RoomDetail({ }) {
             console.log("error", code);
             setStatus("error");
             setReason(reason);
-            setIsLoading(false);
+            setMsgLoading(reason)
             return;
         }
 
@@ -248,6 +249,7 @@ export default function RoomDetail({ }) {
         setMsgLoading("Enviando ...")
 
         try {
+            console.log(params.room_id);
             const keypairUser = keypair; console.log("selecte: ", answer + " " + rooms.match_id, +" " + params.room_id)
             setLoadingMessage("Enviando resultado para su evaluacion")
 
@@ -255,7 +257,7 @@ export default function RoomDetail({ }) {
             setStatus("success");
             setIsLoading(false);
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuserresult', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updateroomuserresult', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -312,7 +314,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando opinion ")
 
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -338,7 +340,7 @@ export default function RoomDetail({ }) {
             }
             if (answer == "reject") {
                 try {
-                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/insertsupreme', {
+                    const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/insertsupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -382,7 +384,7 @@ export default function RoomDetail({ }) {
             return
         }
         try {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${params.room_id}`);
+            const res = await fetch(`https://trustappbackendlive-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${params.room_id}`);
             const data = await res.json();
 
             setRooms(data[0]);
@@ -400,9 +402,10 @@ export default function RoomDetail({ }) {
 
             let feeCop = await getUsdToCop(fee / 10000000);
 
-            setFee(feeCop)
+            setFee((fee / 10000000).toFixed(2));
             let cop = await getUsdToCop(data[0].min_amount / 10000000);
-            setamount(cop);
+            setAmountAgree(cop)
+            setamount((data[0].min_amount / 10000000).toFixed(2));
             if (data[0].user_assest == 'false') {
                 setUserDecision(null)
             } else {
@@ -421,11 +424,8 @@ export default function RoomDetail({ }) {
             let noAssessUsers = 0;
             let rejected = false;
             let lastBet = "";
-            console.log(data[0].local_team_id)
             id1 = data[0].local_team_id;
-            setColor1(teamColorsByID[id1].colors)
             id2 = data[0].away_team_id;
-            setColor2(teamColorsByID[id2].colors)
 
             for (let i = 0; i < data[0].room_users.length; i++) {
                 const item = data[0].room_users[i];
@@ -474,7 +474,7 @@ export default function RoomDetail({ }) {
 
 
             const limitStart = new Date(endTime.getTime());
-            if (now > limit && !data[0].result && !data[0].supreme_distributed) {
+            if (now > limit && !data[0].result && !data[0].supreme_distributed && data[0].active) {
                 console.log("limit passed")
                 setMessage("El tiempo de resolucion ha pasado, el resultado sera resuelto en breve");
             }
@@ -523,9 +523,7 @@ export default function RoomDetail({ }) {
                         setMessage("no obtuvimos tu opnion acerca del resultado o tu prediccion fue incorrecta");
 
                     }
-                }
-
-                if (data[0].supreme_result == data[0].result) {
+                } else if (data[0].supreme_result == data[0].result) {
                     if (data[0].user_assest == "approve") {
                         console.log("late approved");
                         if (data[0].user_claim == true) {
@@ -611,7 +609,7 @@ export default function RoomDetail({ }) {
             setLoadingMessage("Guardando prediccion ")
 
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updateroomuser', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updateroomuser', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
@@ -738,7 +736,10 @@ export default function RoomDetail({ }) {
                         {activeBet ? "Acuerdo activo" : "Esperando participantes"}
                     </Text>
 
-                    <Text style={styles.amountText}>Acuerdo por: {amount}</Text>
+                    <Text style={styles.amountText}>Acuerdo por: {amount} us</Text>
+                    <Text style={styles.amountApprox}>
+                        Aprox. {amountAgree}  pesos colombianos
+                    </Text>
                 </View>
             </View>
 
@@ -872,7 +873,7 @@ export default function RoomDetail({ }) {
                 <View style={styles.tableRow}>
                     <Text style={styles.sectionLabel}>Tarifa aplicada</Text>
                     <Text style={styles.sectionValue}>
-                        {betis ? (rooms.colaterall ? (fee + " cop") : fee + " trust") : "Pendiente"}
+                        {betis ? (rooms.colaterall ? (fee + " us") : fee + " trust") : "Pendiente"}
                     </Text>
                 </View>
 
@@ -1058,6 +1059,11 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: "600",
         marginTop: 8,
+    },
+    amountApprox: {
+        marginTop: 4,
+        fontSize: 13,
+        color: "#666",
     },
 
     actionBox: {

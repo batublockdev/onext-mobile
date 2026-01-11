@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "trustapp1xt",
-    "slug": "trustapp1xt",
-    "version": "1.0.0",
+    "name": "Trust App",
+    "slug": "mobile",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.batublockdev.mobile",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -19,6 +20,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#0B0F14"
       },
+      "versionCode": 2,
       "permissions": [
         "INTERNET"
       ],

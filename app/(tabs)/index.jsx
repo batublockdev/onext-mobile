@@ -36,13 +36,13 @@ const HomeScreen = () => {
     const StellarSdk = require("stellar-sdk");
     const userId = session ? session.user.id : null;
     const server = new StellarSdk.Horizon.Server(
-        "https://horizon-testnet.stellar.org",
+        "https://horizon.stellar.org",
     );
     const seen = new Set();
 
 
-    const USDCasset = new StellarSdk.Asset("USD", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
-    const TrustAsset = new StellarSdk.Asset("TRUST", "GCJWRFAW62LZB6LTSN57OMBYI6CATVFI3CKM63GSL7GNXIYDOL3J7FPY");
+    const USDCasset = new StellarSdk.Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN");
+    const TrustAsset = new StellarSdk.Asset("TRUST", "GD4IBE2P3LXDLXCL5G5LNNPPZLOCWDGTXJF44UHWLHHUDBZDYYRRJDYE");
     useEffect(() => {
         const load = async () => {
             try {
@@ -90,7 +90,7 @@ const HomeScreen = () => {
 
     const fetchRooms = async () => {
         try {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/rooms?user_id=${userId}`);
+            const res = await fetch(`https://trustappbackendlive-production.up.railway.app/api/rooms?user_id=${userId}`);
             const data = await res.json();
             //console.log("my rooms:", data);
             myMaches(data);
@@ -123,7 +123,7 @@ const HomeScreen = () => {
     const supremeCheck = async () => {
         setmyMachesvar([])
         try {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/selectsupreme`);
+            const res = await fetch(`https://trustappbackendlive-production.up.railway.app/api/selectsupreme`);
             const data = await res.json();
             console.log("supreme data:", data);
             const result = data.data;
@@ -192,9 +192,11 @@ const HomeScreen = () => {
                         team2: result[i].away_team_name,
                         logo1: result[i].local_team_colors,
                         logo2: result[i].away_team_colors,
-                        reason: "Cobrar",
+                        reason: "Gracias",
                         honest1: result[i].honest1,
                         honest2: result[i].honest2,
+                        honest1_claim: result[i].honest1_claim,
+                        honest2_claim: result[i].honest2_claim,
                         adm: result[i].adm,
                         externalUser: result[i].externalUser,
                         result: result[i].result,
@@ -211,11 +213,11 @@ const HomeScreen = () => {
         }
 
     }
-    const goGameResult = async (roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed) => {
+    const goGameResult = async (roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1, logo2, reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed, honest1_claim, honest2_claim) => {
         if (type == 1) {
             router.push({
                 pathname: "/GameDatail",
-                params: { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1: JSON.stringify(logo1), logo2: JSON.stringify(logo2), reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed },
+                params: { roomid, match_id, result, type, league, week, localid, awayid, team1, team2, logo1: JSON.stringify(logo1), logo2: JSON.stringify(logo2), reason, howmuch, gameState, honest1, honest2, adm, externalUser, distributed, honest1_claim, honest2_claim },
             });
         } else if (type == 0) {
             router.push({
@@ -231,7 +233,7 @@ const HomeScreen = () => {
     const myMaches = async (rooms) => {
         const now = new Date();
         for (let i = 0; i < rooms.length; i++) {
-            const res = await fetch(`https://backendtrustapp-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${rooms[i].room_id}`);
+            const res = await fetch(`https://trustappbackendlive-production.up.railway.app/api/room?user_id=${session.user.id}&room_id=${rooms[i].room_id}`);
             const data = await res.json();
             console.log("my match data:", data);
             const startGame = new Date(data[0].start_time);
@@ -275,7 +277,7 @@ const HomeScreen = () => {
                         type: 0,
 
                         match_id: rooms[i].match_id,
-                        league: "Colombia primera A",
+                        league: "Acuerdo sin resolver",
                         week: rooms[i].fecha,
                         team1: rooms[i].local_team_name,
                         team2: rooms[i].away_team_name,
@@ -296,7 +298,7 @@ const HomeScreen = () => {
                             type: 0,
 
                             match_id: rooms[i].match_id,
-                            league: "Colombia primera A",
+                            league: "Acuerdo sin resolver",
                             week: rooms[i].fecha,
                             team1: rooms[i].local_team_name,
                             team2: rooms[i].away_team_name,
@@ -341,7 +343,7 @@ const HomeScreen = () => {
                                     type: 0,
 
                                     match_id: rooms[i].match_id,
-                                    league: "Colombia primera A",
+                                    league: "Acuerdo sin resolver",
                                     week: rooms[i].fecha,
                                     team1: rooms[i].local_team_name,
                                     team2: rooms[i].away_team_name,

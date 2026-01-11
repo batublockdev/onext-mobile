@@ -20,7 +20,7 @@ const TabsLayout = () => {
         console.log("User ID:", user.id); // Log the user ID to verify it's being accessed correctly
         const fetchUser = async () => {
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/user', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/user', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',

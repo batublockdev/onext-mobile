@@ -111,7 +111,7 @@ export default function GameDetails({ }) {
 
                 setLoadingMessage("Saving user data...");
                 try {
-                    const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
+                    const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updatesupreme', {
                         method: 'POST', // must be POST to send body
                         headers: {
                             'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export default function GameDetails({ }) {
             setIsLoading(false);
             setLoadingMessage("Saving user data...");
             try {
-                const response = await fetch('https://backendtrustapp-production.up.railway.app/api/updatesupreme', {
+                const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/updatesupreme', {
                     method: 'POST', // must be POST to send body
                     headers: {
                         'Content-Type': 'application/json',
