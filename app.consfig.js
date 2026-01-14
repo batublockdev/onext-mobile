@@ -4,13 +4,13 @@ export default {
         "name": "Trust App",
         "slug": "mobile",
         "version": "1.0.1",
-        "orientation": "portrait",
+        "orientation": "default",
         "icon": "./assets/images/icon.png",
         "scheme": "mobile",
         "userInterfaceStyle": "automatic",
         "newArchEnabled": true,
         "ios": {
-            "supportsTablet": false,
+            "supportsTablet": true,
             "buildNumber": "2",
             "bundleIdentifier": "com.batublockdev.mobile"
         },

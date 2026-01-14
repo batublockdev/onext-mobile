@@ -153,7 +153,7 @@ export default function ProfileScreen() {
                 <View style={styles.qrCard}>
                     <QRCode
                         value={walletAddress}
-                        size={200}
+                        size={100}
                         color="#35D787"
                         backgroundColor="transparent"
                     />
@@ -242,6 +242,8 @@ const styles = StyleSheet.create({
         padding: 20,
         alignItems: "center",
         backgroundColor: "#0A0F14",
+        maxWidth: 700,   // 👈 tablet-safe
+
     },
 
     /* HEADER */
