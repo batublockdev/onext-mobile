@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
+import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from 'react';
 import 'react-native-get-random-values'; // MUST be first
 import { Keypair } from 'stellar-sdk';
@@ -97,17 +98,21 @@ const TabsLayout = () => {
 
         }
     }
+    const getPrivateKey = async () => {
+        return await SecureStore.getItemAsync(session.user.id);
+    };
 
     const handlePinComplete = async (pin) => {
         try {
             console.log("Userx data:", userx);
-            const keyUser = await decryptOnly(userx[0].encrypted_data, pin);
+            let data = await getPrivateKey();
+            const dataKey = JSON.parse(data)
+            const keyUser = await decryptOnly(dataKey.privateKey, pin);
             const ky = Keypair.fromRawEd25519Seed(keyUser.key);
-
             setKeypair(ky);
-            setisLoading(false);
             setPinStatus("success");
             setisLoadingAnimation(false);
+            setisLoading(false);
 
 
 

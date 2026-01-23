@@ -1,8 +1,7 @@
 import { Link, useRouter } from 'expo-router';
 import * as React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
-
 export default function SignUpScreen() {
     const router = useRouter()
     const [firstName, setFirstName] = React.useState('');
@@ -24,6 +23,8 @@ export default function SignUpScreen() {
     // Handle submission of sign-up form
     const onSignUpPress = async () => {
         setGlobalError("")
+        setGlobalError(null);
+        setIsLoading(true);
         //if (!isLoaded) return
 
         // Start sign-up process using email and password provided
@@ -41,16 +42,21 @@ export default function SignUpScreen() {
                 }
             })
             if (error) {
-                console.log(error)
+                setGlobalError(
+                    error?.message || "Algo salió mal. Intenta nuevamente."
+                );
             }
             // Set 'pendingVerification' to true to display second form
             // and capture OTP code
         } catch (err) {
             // See https://clerk.com/docs/custom-flows/error-handling
             // for more info on error handling
-            setGlobalError("Error intentalo de nuevo")
-            console.log(err)
+            setGlobalError(
+                error?.message || "Algo salió mal. Intenta nuevamente."
+            );
 
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -62,7 +68,7 @@ export default function SignUpScreen() {
 
             {globalError && (
                 <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>{globalError}</Text>
+                    <Text style={styles.errorBoxText}>{globalError}</Text>
                 </View>
             )}
 
@@ -108,9 +114,11 @@ export default function SignUpScreen() {
                 onPress={onSignUpPress}
                 disabled={isLoading}
             >
-                <Text style={styles.buttonText}>
-                    {isLoading ? 'Creando cuenta...' : 'Continuar'}
-                </Text>
+                {isLoading ? (
+                    <ActivityIndicator size="small" color="#000" />
+                ) : (
+                    <Text style={styles.buttonText}>Continuar</Text>
+                )}
             </TouchableOpacity>
 
             <View style={styles.signInRow}>

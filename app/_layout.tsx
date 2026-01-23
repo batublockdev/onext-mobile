@@ -1,4 +1,3 @@
-
 import { Slot } from 'expo-router';
 import 'react-native-url-polyfill/auto';
 import GlobalBanner from '../components/GlobalBanner';

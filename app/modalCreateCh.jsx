@@ -29,11 +29,13 @@ export default function BetRoomModal({ visible, onClose, game }) {
     const [reason, setReason] = useState("");
     const [roomCode, setRoomCode] = useState("");
     const [minBet, setMinBet] = useState("");
+    const [minBetx, setMinBetx] = useState(true);
+
     const [loadingx, setLoadingx] = useState(false);
     const [msgLoading, setMsgLoading] = useState("Cargando");
     const parsedMatch = JSON.parse(game);
     const [friendCodeError, setFriendCodeError] = useState(null);
-
+    const MIN_BET = 1000;
     console.log("Parsed Match in Modal:", parsedMatch);
     const [amount, setAmount] = useState(0);
     function cleanNumber(value) {
@@ -337,13 +339,27 @@ export default function BetRoomModal({ visible, onClose, game }) {
                     {/* Amount box */}
 
                     <Text style={styles.label}>Aporte por participante</Text>
+                    {!minBetx && (
+                        <Text style={styles.errorTextx}>
+                            Minimo ${MIN_BET.toLocaleString()} COP
+                        </Text>
+                    )}
                     <TextInput
                         style={styles.input}
                         value={amount}
-                        placeholder="$0"
+                        placeholder="$0 COP"
                         placeholderTextColor="#999"
                         keyboardType="numeric"
                         onChangeText={(text) => {
+                            // Remove non-numeric characters
+                            const numericValue = Number(text.replace(/\D/g, ""));
+
+                            // Enforce minimum
+                            if (numericValue < MIN_BET) {
+                                setMinBetx(false); // or show error
+                            } else {
+                                setMinBetx(true);
+                            }
                             const formatted = formatCOP(text);
                             setAmount(formatted);
                             console.log("Formatted Amount:", formatted);
@@ -555,6 +571,11 @@ const styles = StyleSheet.create({
 
         borderWidth: 1,
         borderColor: "#1E252D",
+    },
+    errorTextx: {
+        color: "#ecff41",
+        fontSize: 12,
+        margin: 4,
     },
 
     friendName: {

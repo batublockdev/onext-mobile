@@ -14,6 +14,10 @@ const HomeScreen = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState(null); // null | "success" | "error"
     const [USDCBalance, setUSDCBalance] = useState("0"); // null | "success" | "error"
+    const [USDCBalanceUsd, setUSDCBalanceUsd] = useState("0"); // null | "success" | "error"
+    const [energyLevels, setenergyLevels] = useState("0"); // null | "success" | "error"
+
+
     const [TRUSTBalance, setTRUSTBalance] = useState("0"); // null | "success" | "error"
     const [loadingMessage, setLoadingMessage] = useState('...');
     const [reason, setReason] = useState(null);
@@ -39,7 +43,10 @@ const HomeScreen = () => {
         "https://horizon.stellar.org",
     );
     const seen = new Set();
-
+    const formatBalance = (value) => {
+        if (!value) return "0";
+        return Number(value).toFixed(2).slice(0, 4);
+    };
 
     const USDCasset = new StellarSdk.Asset("USDC", "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN");
     const TrustAsset = new StellarSdk.Asset("TRUST", "GD4IBE2P3LXDLXCL5G5LNNPPZLOCWDGTXJF44UHWLHHUDBZDYYRRJDYE");
@@ -375,13 +382,21 @@ const HomeScreen = () => {
                 const asseTrustBalance = account.balances.find(
                     (b) => b.asset_code === TrustAsset.getCode() && b.asset_issuer === TrustAsset.getIssuer()
                 );
-
+                const xlmBalance = account.balances.find(
+                    (b) => b.asset_type === "native"
+                );
+                console.log("XLM balance:", xlmBalance?.balance);
+                if (xlmBalance) {
+                    setenergyLevels(xlmBalance?.balance);
+                }
                 if (assetUsdcBalance) {
+
                     console.log(`${USDCasset.getCode()} balance: ${assetUsdcBalance.balance}`);
                     let usd = await getUsdToCop(parseFloat(assetUsdcBalance.balance));
                     let formattedUsd = await formatCOP(usd);
                     console.log(formattedUsd, "Apx");
                     setUSDCBalance(formattedUsd);
+                    setUSDCBalanceUsd(assetUsdcBalance.balance);
                 } else {
                     console.log(`No ${USDCasset.getCode()} balance found`);
                 }
@@ -442,32 +457,59 @@ const HomeScreen = () => {
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.push({
-                        pathname: "/summiter",
-                    })} style={{ padding: 10, flexDirection: "row", alignItems: "center" }}>
-
+                    <TouchableOpacity
+                        onPress={() => router.push({ pathname: "/summiter" })}
+                        style={styles.userBlock}
+                    >
                         <View style={{ marginLeft: 10 }}>
+                            <Text style={styles.username}>
+                                {session.user.user_metadata.name}
+                            </Text>
 
-                            <Text style={styles.username}>{session.user.user_metadata.name}</Text>
-                            <Text style={styles.userId}>ID: {idcode}</Text>
+                            <Text style={styles.userId}>
+                                ID: {idcode}
+                            </Text>
                         </View>
                     </TouchableOpacity>
 
+                    {/* Position info */}
                     <View style={styles.headerIcons}>
-                        <Text style={styles.icon}>{position}</Text>
+                        <Text style={styles.positionLabel}>Position</Text>
+                        <Text style={styles.positionValue}>{position}</Text>
                     </View>
                 </View>
 
                 {/* Total Bets */}
                 <View style={styles.totalBox}>
-                    <Text style={styles.totalLabel}>Saldo</Text>
-                    <Text style={styles.totalValue}>{USDCBalance}</Text>
-                    <Text style={styles.totalChange}>{TRUSTBalance + " Trust"}</Text>
+
+                    <View style={styles.conversionRow}>
+                        <Text style={styles.usdMain} numberOfLines={1}>
+                            ${formatBalance(USDCBalanceUsd)} USD
+                        </Text>
+
+                        <Text style={styles.arrow} numberOfLines={1}>
+                            ≈
+                        </Text>
+
+                        <Text style={styles.apxConverted} numberOfLines={1}>
+                            {USDCBalance} Cop
+                        </Text>
+                    </View>
+
+                    {/* TRUST – even smaller */}
+                    <Text style={styles.trust}>
+                        {TRUSTBalance} TRUST
+                    </Text>
+
+                    {/* XLM – smallest + emoji */}
+                    <Text style={styles.xlm}>
+                        ⚡ {formatBalance(energyLevels)} XLM
+                    </Text>
                 </View>
 
 
                 {/* My Matches */}
-                <Section title="My Matches">
+                <Section title="Acuerdos">
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginVertical: 10 }}>
                         {myMachesvar
                             .filter(m => {
@@ -487,7 +529,7 @@ const HomeScreen = () => {
                 </Section>
 
                 {/* Watchlist */}
-                <Section title="Watchlist">
+                <Section title="Partidos">
                     <MatchesScreen onOpen={(id, data) => { console.log(id, data); setModalVisible(true), setdataModalVisible(data) }} />
                 </Section>
                 <BetRoomModal
@@ -512,24 +554,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    /* Header */
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    username: {
-        color: "#F5F5F5",
-        fontSize: 18,
-        fontWeight: "700",
-    },
-    userId: {
-        color: "#C8CCD1",
-        fontSize: 12,
-    },
-    headerIcons: {
-        flexDirection: "row",
-    },
+
+
     icon: {
         fontSize: 22,
         marginLeft: 15,
@@ -537,10 +563,7 @@ const styles = StyleSheet.create({
     },
 
     /* Total */
-    totalBox: {
-        marginTop: 20,
-        alignItems: "center",
-    },
+
     totalLabel: {
         color: "#C8CCD1",
         fontSize: 14,
@@ -575,8 +598,127 @@ const styles = StyleSheet.create({
     sectionContent: {
         marginTop: 15,
     },
+    totalBox: {
+        borderRadius: 18,
+        padding: 10,
+    },
+
+    label: {
+        color: "#888",
+        fontSize: 14,
+        marginBottom: 10,
+    },
+
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 0,
+        paddingVertical: 20,
+    },
+
+    userBlock: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+
+    username: {
+        fontSize: 25,
+        fontWeight: "800",
+        color: "#FFFFFF",
+    },
+
+    userId: {
+        fontSize: 13,
+        color: "#9E9E9E",
+        marginTop: 2,
+    },
+
+    headerIcons: {
+        alignItems: "flex-end",
+    },
+
+    positionLabel: {
+        fontSize: 12,
+        color: "#8FA3AD", // soft, non-spotting
+    },
+
+    positionValue: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#FFFFFF",
+    },
+
+    // APX
+    apx: {
+        fontSize: 22,
+        fontWeight: "600",
+        color: "#00E676",
+        marginBottom: 6,
+    },
+
+    // COP (smaller)
+    cop: {
+        fontSize: 16,
+        color: "#B0BEC5",
+        marginBottom: 4,
+    },
+
+    // TRUST (even smaller)
+    trust: {
+        fontSize: 14,
+        color: "#90A4AE",
+        marginBottom: 4,
+    },
+
+    // XLM (smallest + emoji)
+    xlm: {
+        fontSize: 13,
+        color: "#FFD54F",
+    },
 
     /* Cards (My Matches + Watchlist) */
+    onversionRow: {
+        flexDirection: "row",
+        alignItems: "baseline",
+        gap: 8,
+        marginBottom: 10,
+    },
+
+    // MAIN USD
+
+
+    // Conversion symbol
+    arrow: {
+        fontSize: 18,
+        color: "#666", // neutral, non-spotting
+        marginHorizontal: 4,
+    },
+
+
+    conversionRow: {
+        flexDirection: "row",   // 🔥 horizontal layout
+        alignItems: "flex-end", // 🔥 aligns text baselines
+        flexWrap: "nowrap",    // 🔥 prevents wrapping
+    },
+
+    usdMain: {
+        fontSize: 23,
+        fontWeight: "700",
+        color: "#FFFFFF",
+        marginRight: 6,        // 🔥 spacing instead of gap (Android-safe)
+    },
+
+    arrow: {
+        fontSize: 18,
+        color: "#666",
+        marginRight: 6,
+    },
+
+    apxConverted: {
+        fontSize: 16,
+        color: "#8FA3AD",
+    },
     matchCard: {
         backgroundColor: "#1A1F25",
         padding: 18,

@@ -30,9 +30,9 @@ const LegalMenu = () => {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.menuBtn} onPress={() => Linking.openURL(
-                "https://stellar.expert/explorer/testnet/contract/CC5ZASMEMSKWBDRNDVR72SGP2V4FQ722OKIVIHCVMPXFLH5YL5FXN2VU"
+                "https://stellar.expert/explorer/public/contract/CA3UB5N7S6XXXHEZGZ6GJU5OVIIX5OQ7TAQ7X65BWY4YK3MWLVZF4ZL3"
             )}>
-                <Text style={styles.menuBtnText}>Smart contrato</Text>
+                <Text style={styles.menuBtnText}>Mirar contrato</Text>
             </TouchableOpacity>
             <DisclaimerModal visible={open} onAccept={formatCOP} ></DisclaimerModal>
 

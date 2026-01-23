@@ -1,10 +1,10 @@
+import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Keypair } from "stellar-sdk";
 import { useApp } from '../app/contextUser';
 import { useAuth } from '../context/AuthContext';
 import PinVerification from './pin';
-
 const { executionImport } = require('../self-wallet/wallet');
 export default function PrivateKeyImport({ onContinue, onBack }) {
     const { session } = useAuth()
@@ -74,15 +74,35 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
             setMsg2("Private key incorrecta");
         }
     }
+    const savePrivateKey = async (privateKey) => {
+
+        try {
+            console.log("keystore:", session.user.id);
+            console.log("keystore jsn:", JSON.stringify({ privateKey }));
+            const key = String(session.user.id);
+            await SecureStore.setItemAsync(key, JSON.stringify({ privateKey }), {
+                keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+            });
+            console.log("✅ Private key saved securely");
+        } catch (error) {
+            console.error("❌ SecureStore error:", error);
+        }
+    };
     const handlePinComplete = async (pin) => {
         // Call the wallet creation function with the PIN as password
         console.log("PIN set to:");
         const { publicKey, keystore, id_app, secrect } = await executionImport(keyPr, pin);
-        console.log("keystore:", keystore);
         console.log("id_app:", id_app);
         console.log("Public Key:", publicKey);
+        savePrivateKey(keystore);
 
-
+        const dummyPrCode = {
+            crypto: {
+                cipher: "DUMMY_CIPHER_TEXT_BASE64",
+                nonce: "DUMMY_NONCE_BASE64",
+                kdf: "sha512-hash",
+            },
+        };
 
         try {
             const response = await fetch('https://trustappbackendlive-production.up.railway.app/api/usersave', {
@@ -90,7 +110,7 @@ export default function PrivateKeyImport({ onContinue, onBack }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ id_user: session.user.id, pub_key: publicKey, pr_code: keystore, tokenNotification: "token", username: session.user.user_metadata.name, user_email: session.user.email, id_app: id_app }), // send your user ID here
+                body: JSON.stringify({ id_user: session.user.id, pub_key: publicKey, pr_code: dummyPrCode, tokenNotification: "token", username: session.user.user_metadata.name, user_email: session.user.email, id_app: id_app }), // send your user ID here
             });
 
             if (!response.ok) {

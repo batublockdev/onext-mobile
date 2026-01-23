@@ -1,16 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+
 import { useEffect, useState } from "react";
 import { Modal, Share, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { useSignOut } from "../(auth)/signout";
 import PrivateKeyImport from "../../components/importprivatekey";
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from "../../lib/supabase";
 import { useApp } from '../contextUser';
 
 export default function ProfileScreen() {
     const { userx, setUserx, setKeypair } = useApp();
     const [importPkey, setImport] = useState(false);
+    const { session } = useAuth()
+
     const walletAddress = userx ? userx[0]?.pub_key : 'N/A'; // dynamic
     const username = userx ? userx[0]?.username : '?';
     const userId = userx ? userx[0]?.id_app : 'N/A';
@@ -53,8 +58,13 @@ export default function ProfileScreen() {
                 return;
             }
             const data = await response.json();
-            await supabase.auth.signOut();
+            await supabase.auth.signOut({ scope: "local" });
+            await SecureStore.deleteItemAsync("supabase.auth.token");
             await supabase.auth.admin.deleteUser(userx[0].user_id);
+
+            await SecureStore.deleteItemAsync(String(session.user.id));
+            console.log("✅ Private key deleted");
+
             console.log('User data deleted successfully:', data);
             setUserx([])
             setKeypair()
@@ -153,7 +163,7 @@ export default function ProfileScreen() {
                 <View style={styles.qrCard}>
                     <QRCode
                         value={walletAddress}
-                        size={100}
+                        size={150}
                         color="#35D787"
                         backgroundColor="transparent"
                     />
@@ -178,7 +188,21 @@ export default function ProfileScreen() {
                     {/* Log Out */}
                     <TouchableOpacity
                         style={styles.logoutBtn}
-                        onPress={() => { supabase.auth.signOut(); setKeypair(null); }}
+                        onPress={async () => {
+                            try {
+
+
+                                // 2. Supabase logout
+                                await supabase.auth.signOut({ scope: "local" });
+
+                                // 3. Reset app state
+                                setKeypair(null);
+
+                                console.log("✅ Logged out correctly");
+                            } catch (e) {
+                                console.error("❌ Logout error:", e);
+                            }
+                        }}
                     >
                         <Text style={styles.logoutTxt}>Cerrar sesión</Text>
                     </TouchableOpacity>

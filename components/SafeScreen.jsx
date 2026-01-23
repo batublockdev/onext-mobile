@@ -1,7 +1,6 @@
 import React from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 const SafeScreen = ({ children }) => {
     const insets = useSafeAreaInsets();
     const { width } = useWindowDimensions(); // ✅ HERE
@@ -11,7 +10,6 @@ const SafeScreen = ({ children }) => {
             style={{
                 flex: 1,
                 paddingTop: insets.top,
-                paddingBottom: insets.bottom,
                 paddingLeft: insets.left,
                 paddingRight: insets.right,
                 backgroundColor: "#0D0D0D",

@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfirmPrediction from "../components/ConfirmationPrediction";
 import { ERROR_MESSAGES } from "../components/error";
 import LoadingOverlay from "../components/loadingCompnent";
@@ -19,6 +19,8 @@ const {
 } = require("../SmartContract/smartcontractOperation");
 const { decryptOnly } = require('../self-wallet/wallet');
 export default function RoomDetail({ }) {
+    const [modalVisible, setModalVisible] = useState(false);
+    const [pendingAction, setPendingAction] = useState({});
     const router = useRouter();
     const [loadingx, setIsLoading] = useState(false);
 
@@ -127,11 +129,11 @@ export default function RoomDetail({ }) {
 
             /** we got to show all the info */
             if (amountTrust == 0) {
-                setMsgLoading(` + ${cop} `)
+                setMsgLoading(` + ${amountUsd} usd`)
 
             } else {
                 let trust = await getUsdToCop(amountTrust);
-                setMsgLoading(` + ${cop} y + ${trust} Trust`)
+                setMsgLoading(` + ${amountUsd} usd y + ${amountTrust} Trust`)
 
             }
 
@@ -142,7 +144,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: true, ready: true, colaterall: rooms.colaterall, amount_earned: cop }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: true, ready: true, colaterall: rooms.colaterall, amount_earned: amountUsd }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -195,12 +197,12 @@ export default function RoomDetail({ }) {
             let cop = await getUsdToCop(amountUsd);
 
             if (amountTrust == 0) {
-                setMsgLoading(` + ${cop} `)
+                setMsgLoading(` + ${amountUsd} usd `)
 
             } else {
                 let copTrust = await getUsdToCop(amountTrust);
 
-                setMsgLoading(` + ${cop} y + ${copTrust} `)
+                setMsgLoading(` + ${amountUsd} usd y + ${amountTrust} `)
 
             }
 
@@ -212,7 +214,7 @@ export default function RoomDetail({ }) {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: activeBet, ready: claimAvailable, colaterall: rooms.colaterall, amount_earned: cop }), // send your user ID here
+                    body: JSON.stringify({ id_user: userx[0].user_id, id_room: params.room_id, bet: rooms.user_bet, claim: true, active: activeBet, ready: claimAvailable, colaterall: rooms.colaterall, amount_earned: amountUsd }), // send your user ID here
                 });
 
                 if (!response.ok) {
@@ -242,6 +244,12 @@ export default function RoomDetail({ }) {
         }
 
     }
+    const getWinnerLabel = (value) => {
+        if (value === "Team_local") return room.local_team_name;
+        if (value === "Team_away") return room.away_team_name;
+        return "Empate";
+    };
+
     const handlesummit = async (answer) => {
         setIsLoading(true);
         setStatus("loading");
@@ -637,7 +645,8 @@ export default function RoomDetail({ }) {
             console.log("error", code);
             setStatus("error");
             setReason(reason);
-            setIsLoading(false);
+            setMsgLoading(reason)
+
             return;
         }
     };
@@ -681,6 +690,59 @@ export default function RoomDetail({ }) {
             contentContainerStyle={{ paddingBottom: 80 }}
             showsVerticalScrollIndicator={false}
         >
+            <Modal
+                transparent
+                visible={modalVisible}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>
+                            {pendingAction?.type === "decision"
+                                ? pendingAction.value === "approve"
+                                    ? "Aprobar resultado enviado"
+                                    : "Rechazar resultado enviado"
+                                : `Resultado del partido:  ${getWinnerLabel(
+                                    pendingAction?.value
+                                )} `}
+                        </Text>
+
+                        <Text style={styles.modalMessage}>
+                            {
+                                "Esta acción no se puede cambiar después."}
+                        </Text>
+
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: "#ccc" }]}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text>Cancelar</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.modalButton, { backgroundColor: "#000" }]}
+                                onPress={() => {
+                                    if (!pendingAction) return;
+
+                                    if (pendingAction.type === "decision") {
+                                        handleDesition(pendingAction.value);
+                                    } else {
+                                        handlesummit(pendingAction.value);
+                                    }
+
+                                    setModalVisible(false);
+                                    setPendingAction(null);
+                                }}
+                            >
+                                <Text style={{ color: "#fff" }}>Confirmar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
 
             <LoadingOverlay
                 visible={loadingx}
@@ -736,7 +798,7 @@ export default function RoomDetail({ }) {
                         {activeBet ? "Acuerdo activo" : "Esperando participantes"}
                     </Text>
 
-                    <Text style={styles.amountText}>Acuerdo por: {amount} us</Text>
+                    <Text style={styles.amountText}>Acuerdo por: {amount} usd</Text>
                     <Text style={styles.amountApprox}>
                         Aprox. {amountAgree}  pesos colombianos
                     </Text>
@@ -774,7 +836,10 @@ export default function RoomDetail({ }) {
                 {result && !message && (
                     <>
                         {["Team_local", "Tie", "Team_away"].map((option) => (
-                            <TouchableOpacity key={option} style={styles.actionButton} onPress={() => handlesummit(option)}>
+                            <TouchableOpacity key={option} style={styles.actionButton} onPress={() => {
+                                setPendingAction({ type: "winner", value: option });
+                                setModalVisible(true);
+                            }}>
                                 <Text style={styles.actionButtonText}>
                                     {option === "Team_local"
                                         ? room.local_team_name
@@ -816,14 +881,20 @@ export default function RoomDetail({ }) {
                             <View style={styles.decisionRow}>
                                 <TouchableOpacity
                                     style={[styles.decisionButton, { backgroundColor: "#00E676" }]}
-                                    onPress={() => handleDesition("approve")}
+                                    onPress={() => {
+                                        setPendingAction({ type: "decision", value: "approve" });
+                                        setModalVisible(true);
+                                    }}
                                 >
                                     <Text style={styles.decisionText}>Confirmar</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={[styles.decisionButton, { backgroundColor: "#FF5252" }]}
-                                    onPress={() => handleDesition("reject")}
+                                    onPress={() => {
+                                        setPendingAction({ type: "decision", value: "reject" });
+                                        setModalVisible(true);
+                                    }}
                                 >
                                     <Text style={styles.decisionText}>Rechazar</Text>
                                 </TouchableOpacity>
@@ -871,9 +942,9 @@ export default function RoomDetail({ }) {
                 </View>
 
                 <View style={styles.tableRow}>
-                    <Text style={styles.sectionLabel}>Tarifa aplicada</Text>
+                    <Text style={styles.sectionLabel}>Tarifa </Text>
                     <Text style={styles.sectionValue}>
-                        {betis ? (rooms.colaterall ? (fee + " us") : fee + " trust") : "Pendiente"}
+                        {betis ? (rooms.colaterall ? (fee + " usd") : fee + " trust") : "Pendiente"}
                     </Text>
                 </View>
 
@@ -1191,5 +1262,39 @@ const styles = StyleSheet.create({
         color: "#ccc",
         fontSize: 11,
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContainer: {
+        width: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
+    modalMessage: {
+        fontSize: 14,
+        color: "#555",
+        marginBottom: 20,
+    },
+    modalActions: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+    },
+    modalButton: {
+        flex: 1,
+        padding: 12,
+        borderRadius: 8,
+        alignItems: "center",
+        marginHorizontal: 5,
+    },
+
 });
 
