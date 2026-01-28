@@ -3,7 +3,7 @@ export default {
     expo: {
         "name": "Trust App",
         "slug": "mobile",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "orientation": "default",
         "icon": "./assets/images/icon.png",
         "scheme": "mobile",
@@ -11,14 +11,14 @@ export default {
         "newArchEnabled": true,
         "ios": {
             "supportsTablet": true,
-            "buildNumber": "2",
+            "buildNumber": "3",
             "bundleIdentifier": "com.batublockdev.mobile"
         },
         "android": {
             "adaptiveIcon": {
                 "backgroundColor": "#0B0F14"
             },
-            "versionCode": 2,
+            "versionCode": 3,
 
             "permissions": [
                 "INTERNET"

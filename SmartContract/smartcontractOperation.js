@@ -22,10 +22,10 @@ global.Buffer = Buffer;
 
 // Configure the SDK to use the `stellar-rpc` instance of your choosing.
 const server = new StellarRpc.Server(
-    "https://stellar.api.onfinality.io/public",
+    "https://rpc.lightsail.network/",
 );
 
-
+const PASSING_FEE = 1500000;
 const bettingContractAddress = "CA3UB5N7S6XXXHEZGZ6GJU5OVIIX5OQ7TAQ7X65BWY4YK3MWLVZF4ZL3";
 const bettingContract = new Contract(bettingContractAddress);
 
@@ -379,7 +379,7 @@ async function buildTransation(funtionName, params, sourceKeypair) {
 
     // 6. Build transaction
     const tx = new TransactionBuilder(sourceAccount, {
-        fee: BASE_FEE,
+        fee: PASSING_FEE,
         networkPassphrase: Networks.PUBLIC,
     })
         .addOperation(bettingContract.call(funtionName, ...params))
@@ -517,8 +517,10 @@ async function funtionExecution(functionName, paramsFunc, sourceKeypair) {
     const params = [...paramsFunc];
     const tx = await buildTransation(functionName, params, sourceKeypair);
     const simResponse = await simulateTransaction(tx);
+
     const preparedTransaction = await prepareTransaction(tx, sourceKeypair);
     const result = await sendTransaction(preparedTransaction);
+
     console.log('result:', result._value);
     return result._value;
 }

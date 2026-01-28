@@ -33,7 +33,11 @@ const HomeScreen = () => {
 
     const { session } = useAuth()
     const router = useRouter();
-
+    const getEnergyColor = (amount) => {
+        if (amount >= 1) return "#00E676";      // green – all good
+        if (amount >= 0.2) return "#FFC107";    // yellow – warning
+        return "#FF5252";                       // red – charge now
+    };
     const [depositUrl, setDepositUrl] = useState(null);
     const { signOutUser } = useSignOut();
     const { userx, setUserx } = useApp();
@@ -502,7 +506,12 @@ const HomeScreen = () => {
                     </Text>
 
                     {/* XLM – smallest + emoji */}
-                    <Text style={styles.xlm}>
+                    <Text
+                        style={[
+                            styles.xlm,
+                            { color: getEnergyColor(energyLevels) }
+                        ]}
+                    >
                         ⚡ {formatBalance(energyLevels)} XLM
                     </Text>
                 </View>
